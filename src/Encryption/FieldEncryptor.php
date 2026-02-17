@@ -4,11 +4,15 @@ namespace Isapp\SensitiveFormFields\Encryption;
 
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
-use Statamic\Facades\Addon;
+use Statamic\Addons\Addon;
 
 class FieldEncryptor
 {
     protected const PREFIX = 'enc:v1:';
+
+    public function __construct(
+        protected Addon $addon,
+    ) {}
 
     public function encrypt(string $value): string
     {
@@ -41,22 +45,11 @@ class FieldEncryptor
 
     public function isEnabled(): bool
     {
-        return (bool) $this->setting('enabled', true);
+        return (bool) ($this->addon->setting('enabled') ?? true);
     }
 
     public function mask(): string
     {
-        return $this->setting('mask', '••••••');
-    }
-
-    protected function setting(string $key, mixed $default = null): mixed
-    {
-        $addon = Addon::get('isapp/statamic-sensitive-form-fields');
-
-        if (! $addon) {
-            return $default;
-        }
-
-        return $addon->setting($key) ?? $default;
+        return (string) ($this->addon->setting('mask') ?? '••••••');
     }
 }

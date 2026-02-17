@@ -2,15 +2,13 @@
 
 namespace Isapp\SensitiveFormFields;
 
-use Illuminate\Support\Facades\Event;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
-use Isapp\SensitiveFormFields\Listeners\EncryptSensitiveFields;
 use Isapp\SensitiveFormFields\Repositories\DecryptingSubmissionRepository;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
 use Statamic\Contracts\Forms\SubmissionRepository;
-use Statamic\Events\SubmissionSaving;
 use Statamic\Facades\Permission;
-use Statamic\Fields\Fieldtype;
+use Statamic\Fieldtypes\Text;
+use Statamic\Fieldtypes\Textarea;
 use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
@@ -19,7 +17,10 @@ class ServiceProvider extends AddonServiceProvider
     {
         parent::register();
 
-        $this->app->singleton(FieldEncryptor::class);
+        $this->app->singleton(FieldEncryptor::class, function () {
+            return new FieldEncryptor($this->getAddon());
+        });
+
         $this->app->singleton(SensitiveFieldResolver::class);
     }
 
@@ -27,7 +28,6 @@ class ServiceProvider extends AddonServiceProvider
     {
         $this->registerPermission();
         $this->appendFieldConfig();
-        $this->registerListener();
         $this->decorateRepository();
     }
 
@@ -35,25 +35,23 @@ class ServiceProvider extends AddonServiceProvider
     {
         Permission::extend(function () {
             Permission::register('view decrypted sensitive fields')
-                ->label('View Decrypted Sensitive Fields')
-                ->description('Allow viewing decrypted values of sensitive form fields');
+                ->label(__('statamic-sensitive-form-fields::messages.permission_label'))
+                ->description(__('statamic-sensitive-form-fields::messages.permission_description'));
         });
     }
 
     protected function appendFieldConfig(): void
     {
-        Fieldtype::appendConfigField('sensitive', [
+        $config = [
             'type' => 'toggle',
-            'display' => 'Sensitive (encrypted at rest)',
-            'instructions' => 'When enabled, this field\'s value will be encrypted before storage.',
+            'display' => __('statamic-sensitive-form-fields::messages.field_toggle_display'),
+            'instructions' => __('statamic-sensitive-form-fields::messages.field_toggle_instructions'),
             'default' => false,
             'width' => 50,
-        ]);
-    }
+        ];
 
-    protected function registerListener(): void
-    {
-        Event::listen(SubmissionSaving::class, EncryptSensitiveFields::class);
+        Text::appendConfigField('sensitive', $config);
+        Textarea::appendConfigField('sensitive', $config);
     }
 
     protected function decorateRepository(): void

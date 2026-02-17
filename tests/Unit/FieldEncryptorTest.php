@@ -14,7 +14,7 @@ class FieldEncryptorTest extends TestCase
     {
         parent::setUp();
 
-        $this->encryptor = new FieldEncryptor;
+        $this->encryptor = app(FieldEncryptor::class);
     }
 
     public function test_encrypts_value_with_marker_prefix()
