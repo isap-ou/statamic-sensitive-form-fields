@@ -31,10 +31,13 @@ class EncryptSensitiveFields
                 continue;
             }
 
+            // Only strings are encrypted. Complex types (arrays, grids, replicators)
+            // are skipped — encrypting them would break Statamic's own processing.
             if (! \is_string($value)) {
                 continue;
             }
 
+            // encrypt() is idempotent: already-encrypted values are passed through unchanged.
             $submission->set($handle, $this->encryptor->encrypt($value));
         }
     }

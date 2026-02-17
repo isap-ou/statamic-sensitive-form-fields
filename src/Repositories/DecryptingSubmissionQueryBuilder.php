@@ -7,6 +7,7 @@ namespace Isapp\SensitiveFormFields\Repositories;
 use Illuminate\Support\Facades\Auth;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
+use Statamic\Addons\Addon;
 use Statamic\Contracts\Forms\Submission;
 use Statamic\Contracts\Forms\SubmissionQueryBuilder as SubmissionQueryBuilderContract;
 
@@ -16,6 +17,7 @@ class DecryptingSubmissionQueryBuilder implements SubmissionQueryBuilderContract
         protected SubmissionQueryBuilderContract $inner,
         protected FieldEncryptor $encryptor,
         protected SensitiveFieldResolver $resolver,
+        protected Addon $addon,
     ) {}
 
     public function get($columns = ['*'])
@@ -31,6 +33,9 @@ class DecryptingSubmissionQueryBuilder implements SubmissionQueryBuilderContract
         return $paginator;
     }
 
+    // Proxy all builder methods (where, orderBy, limit, …) to the inner builder.
+    // When the inner builder returns itself (fluent interface), we return $this
+    // so the caller keeps working with the decorating wrapper, not the raw inner.
     public function __call($method, $args)
     {
         $result = $this->inner->{$method}(...$args);
@@ -59,7 +64,10 @@ class DecryptingSubmissionQueryBuilder implements SubmissionQueryBuilderContract
             return;
         }
 
-        $canDecrypt = ! $this->encryptor->isPro() || $this->isAuthorized();
+        // FREE: all authenticated users can read decrypted values.
+        // PRO: only super admins and users with the dedicated permission can.
+        // Mirrors the same logic in DecryptingSubmissionRepository::decryptSubmission().
+        $canDecrypt = $this->addon->edition() !== 'pro' || $this->isAuthorized();
 
         foreach ($sensitiveHandles as $handle) {
             $value = $submission->get($handle);

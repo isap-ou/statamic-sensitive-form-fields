@@ -6,6 +6,10 @@ This changelog is used as the base for GitHub Release notes.
 
 ## Unreleased
 
+- [new] PRO: `sensitive-fields:encrypt-existing` — bulk-encrypts plaintext sensitive field values in all existing submissions (idempotent, supports `--form` filter and `--dry-run`)
+- [new] PRO: `sensitive-fields:decrypt-existing` — bulk-decrypts encrypted sensitive field values in all existing submissions (idempotent, supports `--form` filter and `--dry-run`)
+- [new] Statamic Editions support — declare `"editions": ["free", "pro"]` in `composer.json`; PRO mode detected via `Addon::edition()` (set via `config/statamic.php` or the Statamic Marketplace)
+
 ## 1.0.0 (2026-02-17)
 
 - [new] Per-field `sensitive` toggle on Text and Textarea fieldtypes in the form blueprint editor

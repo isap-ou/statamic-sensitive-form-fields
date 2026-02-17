@@ -100,15 +100,18 @@ tests/
 
 ## FREE vs PRO
 
+Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads from `config('statamic.editions.addons.isapp/statamic-sensitive-form-fields')`. Declared in `composer.json` as `"editions": ["free", "pro"]`. Default (unconfigured) is `"free"`.
+
 ### FREE
 - Encryption at rest: sensitive fields encrypted before storage.
-- All authorized CP users see decrypted values (no access control).
-- No masking.
+- All CP users see decrypted values — no permission check.
+- No masking. No PRO commands.
 
-### PRO (`pro` setting toggle)
+### PRO
 - Permission-based access control: only super admins and users with `view decrypted sensitive fields` permission see decrypted values.
-- Unauthorized users see mask string (default `••••••`, configurable).
-- Permission is registered only when PRO mode is enabled.
+- Unauthorized users see mask string (default `••••••`, configurable in addon settings).
+- Permission registered in CP only when PRO mode is active.
+- PRO Artisan commands available: `sensitive-fields:encrypt-existing`, `sensitive-fields:decrypt-existing`.
 
 ---
 
@@ -116,27 +119,29 @@ tests/
 
 ### Recursive re-save commands (existing submissions)
 
-Planned as PRO-only operational commands for bulk migration of historical submissions.
+**Implemented.** PRO-only Artisan commands for bulk migration of historical submissions.
 
-1. `sensitive-fields:encrypt-existing`
+1. `sensitive-fields:encrypt-existing` (`src/Commands/EncryptExistingCommand.php`)
    - Recursively iterates all forms and all existing submissions.
    - Resolves sensitive handles from each form blueprint.
    - Encrypts only unmarked plaintext values (`enc:v1:` guard prevents double encryption).
-   - Persists updated submissions back to storage (Stache/Eloquent) via normal save flow.
+   - Persists via raw (undecorated) repository `save()` — bypasses the `SubmissionSaving` listener.
 
-2. `sensitive-fields:decrypt-existing`
+2. `sensitive-fields:decrypt-existing` (`src/Commands/DecryptExistingCommand.php`)
    - Recursively iterates all forms and all existing submissions.
    - Resolves sensitive handles from each form blueprint.
    - Decrypts values marked with `enc:v1:`.
-   - Persists updated submissions as plaintext.
+   - Persists via raw (undecorated) repository `save()` — decrypted values are not re-encrypted.
 
-### Command behavior requirements
+### Command behavior
 
 - Works for both Stache and Eloquent driver.
 - Idempotent runs (safe to execute repeatedly).
-- Graceful per-submission error handling (log warning, continue processing).
-- Summary output: processed forms/submissions, updated values, skipped values, errors.
-- Optional filters (for implementation phase): by form handle, dry-run mode, chunk size.
+- Graceful per-submission error handling (warn + continue).
+- Summary output: processed / updated / skipped / errors.
+- `--form=<handle>` filter to target a single form.
+- `--dry-run` option to preview changes without writing.
+- Commands are always registered but fail with an error message when not in PRO mode.
 
 ---
 
