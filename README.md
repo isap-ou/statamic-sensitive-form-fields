@@ -58,3 +58,17 @@ Navigate to **CP > Tools > Addons > Sensitive Form Fields > Settings** to config
 ```bash
 vendor/bin/phpunit
 ```
+
+## Releases and Changelog
+
+Changelog entries are published via GitHub Releases (release notes attached to git tags), not as an in-repo running log.
+
+- Releases: https://github.com/isapp/statamic-sensitive-form-fields/releases
+- Changelog policy: [CHANGELOG.md](CHANGELOG.md)
+
+Release notes support custom tags:
+
+- `[new]` shows a **New** badge
+- `[fix]` shows a **Fixed** badge
+
+Version tags must follow Semantic Versioning and should not use a `v` prefix (use `1.0.0`, not `v1.0.0`).
