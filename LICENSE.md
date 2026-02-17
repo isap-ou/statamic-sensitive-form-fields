@@ -1,21 +1,33 @@
-# MIT License
+# Proprietary Software License
 
-Copyright (c) 2026 ISAPP
+Copyright (c) 2026 ISAPP. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Definitions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+- **"Software"** means the Sensitive Form Fields addon and all associated source code, documentation, and assets.
+- **"Free License"** means permission to use the Software at no charge, subject to the terms below.
+- **"Commercial License"** means a paid license purchased through the Statamic Marketplace granting access to Pro features.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+## Grant of Use
+
+Subject to the terms of this license, ISAPP grants you a non-exclusive, non-transferable, limited right to install and use the Software on Statamic sites you own or manage.
+
+- **Free features** are available under the Free License at no charge.
+- **Pro features** require a valid Commercial License purchased through the [Statamic Marketplace](https://statamic.com/addons/isapp/sensitive-form-fields).
+
+## Restrictions
+
+You may not, without prior written permission from ISAPP:
+
+- Copy, modify, or create derivative works of the Software
+- Redistribute, sublicense, sell, or transfer the Software or any portion of it
+- Use the Software to build a competing product or service
+- Remove or alter any proprietary notices, labels, or marks
+
+## No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+
+## Limitation of Liability
+
+IN NO EVENT SHALL ISAPP BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR IN CONNECTION WITH THE USE OF THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.

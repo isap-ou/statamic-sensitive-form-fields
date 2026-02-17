@@ -1,74 +1,102 @@
-# Statamic Sensitive Form Fields
+# Sensitive Form Fields
 
-Encrypt selected form submission fields at rest and decrypt them on read for authorized users. Reduces exposure of sensitive personal data (emails, phone numbers, messages) stored in form submissions.
+Encrypt selected form submission fields before they are written to disk or database. Personal data — emails, phone numbers, messages — stays encrypted at rest and is decrypted at runtime only for authorized users.
 
-## Features
+---
 
-- **Encrypt on write** — sensitive field values are encrypted before persistence using Laravel's `Crypt` (AES-256-CBC with `APP_KEY`)
-- **Decrypt on read** — authorized users see plaintext in the Control Panel; unauthorized users see a masked value (`••••••`)
-- **Per-field toggle** — mark any text-like field as "Sensitive" directly in the form blueprint editor
-- **No storage rewrite** — decryption is runtime-only; stored data always stays encrypted
-- **Driver agnostic** — works with both Stache (flat-file) and Eloquent Driver
+## Free vs Pro
 
-## How to Install
+| Feature | Free | Pro |
+|---------|:----:|:---:|
+| AES-256-CBC encryption at rest | ✓ | ✓ |
+| Per-field "Sensitive" toggle in blueprint editor | ✓ | ✓ |
+| Works with Stache and Eloquent Driver | ✓ | ✓ |
+| Double-encryption guard | ✓ | ✓ |
+| Global enable/disable toggle | ✓ | ✓ |
+| All CP users see decrypted values | ✓ | — |
+| Role-based access control | — | ✓ |
+| Masked values for unauthorized users | — | ✓ |
+| Configurable mask string (default: `••••••`) | — | ✓ |
+
+---
+
+## Requirements
+
+- PHP 8.2+
+- Statamic 6+
+
+## Installation
 
 ```bash
 composer require isapp/statamic-sensitive-form-fields
 ```
 
-## How to Use
+---
+
+## Before You Start: APP_KEY
+
+This addon encrypts data using Laravel's `Crypt`, which relies entirely on your application's `APP_KEY`.
+
+**If `APP_KEY` changes, all previously encrypted submission data becomes permanently unreadable.**
+
+There is no recovery path without the original key. Before enabling this addon on a production site:
+
+- Confirm your `APP_KEY` is backed up securely (password manager, secrets vault)
+- Never commit `.env` to version control
+- If you ever need to rotate `APP_KEY`, decrypt and re-encrypt all sensitive submissions first
+
+> A lost or rotated `APP_KEY` = unrecoverable submission data. The addon logs a warning and returns raw ciphertext on decryption failure, but cannot recover data without the original key.
+
+---
+
+## Usage
 
 ### 1. Mark fields as sensitive
 
-In your form blueprint, toggle **"Sensitive (encrypted at rest)"** on any text, textarea, or email field.
+Open any form blueprint in the Control Panel. On text or textarea fields, enable **"Sensitive (encrypted at rest)"**.
 
-### 2. Assign permission
+From this point on, new submissions will have those field values encrypted before storage.
 
-The addon registers the permission **"View Decrypted Sensitive Fields"**. Grant it to roles that should see plaintext values.
+### 2. [Pro] Assign the permission
 
-Super admins always see decrypted values. Users without the permission see `••••••` instead.
+Go to **CP → Users → Roles** and grant **"View Decrypted Sensitive Fields"** to roles that should see plain text. Super admins always see decrypted values regardless of role.
 
-### 3. Configure addon settings
+Users without the permission see `••••••` instead of the actual value.
 
-Navigate to **CP > Tools > Addons > Sensitive Form Fields > Settings** to configure:
+### 3. [Pro] Configure addon settings
+
+Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 
 - **Enabled** — toggle encryption on/off globally
-- **Mask String** — the string shown to unauthorized users (default: `••••••`)
+- **Mask String** — text shown to users without the permission (default: `••••••`)
+
+---
 
 ## How It Works
 
-1. When a form is submitted, a `SubmissionSaving` event listener encrypts all sensitive field values with a `enc:v1:` marker prefix before persistence.
-2. When submissions are read via the repository (`find`, `whereForm`, `all`, etc.), a decorator checks the current user's permission:
-   - **Authorized**: strips the marker, decrypts the value
-   - **Unauthorized**: replaces the value with the mask string
-3. Already-encrypted values (detected by prefix) are never double-encrypted.
-4. If decryption fails (e.g. after key rotation), the raw ciphertext is returned and a warning is logged.
+1. On form submission, a `SubmissionSaving` listener encrypts sensitive field values before they are written to storage. Encrypted values are prefixed with `enc:v1:`.
+2. On read, a repository decorator processes each sensitive value:
+   - **Free tier** — decrypts and returns plain text for all CP users
+   - **Pro, authorized** — decrypts and returns plain text
+   - **Pro, unauthorized** — returns the configured mask string
+3. Values already prefixed with `enc:v1:` are never double-encrypted.
+4. If decryption fails (e.g. after `APP_KEY` rotation), the raw ciphertext is returned and a warning is logged.
+
+---
 
 ## Limitations
 
-- **Search and filtering** — encrypted fields cannot be searched or filtered (ciphertext is opaque)
-- **APP_KEY rotation** — changing `APP_KEY` makes existing encrypted data unreadable; a migration tool is not included
-- **Complex field types** — only string-based values are encrypted; arrays, grids, and replicator fields are skipped
-- **Export** — CSV/JSON exports contain decrypted or masked values based on the exporting user's permission
-- **API access** — REST/GraphQL responses contain encrypted or masked values unless the authenticated user has the required permission
-- **Query builder** — submissions retrieved via `query()` builder are not automatically decrypted; use `find()`, `whereForm()`, or `all()`
+- **Search and filtering** — encrypted values are opaque; filtering or searching on sensitive fields will not work
+- **APP_KEY rotation** — changing `APP_KEY` permanently breaks all existing encrypted data; there is no built-in migration tool (see [Before You Start](#before-you-start-appkey))
+- **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
+- **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
+- **API** — REST and GraphQL responses respect the same permission rules (Pro)
+- **Query builder** — submissions retrieved via `query()` are not automatically decrypted; use `find()`, `whereForm()`, or `all()`
 
-## Testing
+---
 
-```bash
-vendor/bin/phpunit
-```
+## Changelog
 
-## Releases and Changelog
+Release notes are published via [GitHub Releases](https://github.com/isapp/statamic-sensitive-form-fields/releases).
 
-Changelog entries are published via GitHub Releases (release notes attached to git tags), not as an in-repo running log.
-
-- Releases: https://github.com/isapp/statamic-sensitive-form-fields/releases
-- Changelog policy: [CHANGELOG.md](CHANGELOG.md)
-
-Release notes support custom tags:
-
-- `[new]` shows a **New** badge
-- `[fix]` shows a **Fixed** badge
-
-Version tags must follow Semantic Versioning and should not use a `v` prefix (use `1.0.0`, not `v1.0.0`).
+Version tags follow Semantic Versioning without a `v` prefix (e.g. `1.0.0`).

@@ -1,5 +1,25 @@
 {
     "name": "isapp/statamic-sensitive-form-fields",
+    "type": "statamic-addon",
+    "description": "Encrypt selected form submission fields at rest. Decrypt on read for authorized users only.",
+    "keywords": ["statamic", "addon", "encryption", "form", "sensitive", "security"],
+    "homepage": "https://github.com/isapp/statamic-sensitive-form-fields",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "ISAPP"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.8",
+        "laravel/pint": "^1.27",
+        "captainhook/captainhook": "^5.28",
+        "captainhook/hook-installer": "^1.0"
+    },
     "autoload": {
         "psr-4": {
             "Isapp\\SensitiveFormFields\\": "src"
@@ -10,15 +30,6 @@
             "Isapp\\SensitiveFormFields\\Tests\\": "tests"
         }
     },
-    "require": {
-        "statamic/cms": "^6.0"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^10.8",
-        "laravel/pint": "^1.27",
-        "captainhook/captainhook": "^5.28",
-        "captainhook/hook-installer": "^1.0"
-    },
     "config": {
         "allow-plugins": {
             "pixelfear/composer-dist-plugin": true,
@@ -28,7 +39,7 @@
     "extra": {
         "statamic": {
             "name": "Sensitive Form Fields",
-            "description": "Sensitive Form Fields addon"
+            "description": "Encrypt selected form submission fields at rest. Decrypt on read for authorized users only."
         },
         "laravel": {
             "providers": [
