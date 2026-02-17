@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+remove_debug() {
+    local file=$1
+    sed -i '' '/xdebug_/d' "$file"
+    sed -i '' '/var_dump/d' "$file"
+    sed -i '' '/print_r/d' "$file"
+    sed -i '' '/^\s*dd(/d' "$file"
+    sed -i '' '/^\s*dump(/d' "$file"
+    sed -i '' '/^\s*ray(/d' "$file"
+}
+
+run_pint() {
+    local file=$1
+    vendor/bin/pint --no-interaction "$file"
+}
+
+for php_file in $(git diff --cached --name-only --diff-filter=AM -- '*.php'); do
+    remove_debug "$php_file"
+    run_pint "$php_file"
+    git add "$php_file"
+done
+
+exit 0

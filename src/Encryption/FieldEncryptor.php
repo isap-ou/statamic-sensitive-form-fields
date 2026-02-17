@@ -50,6 +50,11 @@ class FieldEncryptor
         return (bool) ($this->addon->setting('enabled') ?? true);
     }
 
+    public function isPro(): bool
+    {
+        return app()->bound('isapp.sensitive-form-fields.pro');
+    }
+
     public function mask(): string
     {
         return (string) ($this->addon->setting('mask') ?? '••••••');

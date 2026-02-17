@@ -25,6 +25,7 @@ Instructions for AI agents working in this repository.
 | `docs/PLAN.md`                    | Implementation plan, component descriptions, test matrix, limitations |
 | `docs/statamic-building-addon.md` | Statamic 6 official guide — building addons                           |
 | `docs/statamic-testing.md`        | Statamic 6 official guide — addon testing                             |
+| `docs/statamic-events.md`         | Statamic 6 official guide — all available events                      |
 
 ## Technical Rules
 

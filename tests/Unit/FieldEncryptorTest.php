@@ -66,4 +66,16 @@ class FieldEncryptorTest extends TestCase
     {
         $this->assertSame('plaintext', $this->encryptor->decrypt('plaintext'));
     }
+
+    public function test_is_pro_returns_false_by_default()
+    {
+        $this->assertFalse($this->encryptor->isPro());
+    }
+
+    public function test_is_pro_returns_true_when_binding_registered()
+    {
+        app()->bind('isapp.sensitive-form-fields.pro', fn () => true);
+
+        $this->assertTrue($this->encryptor->isPro());
+    }
 }

@@ -8,64 +8,38 @@ use Illuminate\Support\Facades\Auth;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
 use Statamic\Contracts\Forms\Submission;
-use Statamic\Contracts\Forms\SubmissionRepository;
+use Statamic\Contracts\Forms\SubmissionQueryBuilder as SubmissionQueryBuilderContract;
 
-class DecryptingSubmissionRepository implements SubmissionRepository
+class DecryptingSubmissionQueryBuilder implements SubmissionQueryBuilderContract
 {
     public function __construct(
-        protected SubmissionRepository $repository,
+        protected SubmissionQueryBuilderContract $inner,
         protected FieldEncryptor $encryptor,
         protected SensitiveFieldResolver $resolver,
     ) {}
 
-    public function all()
+    public function get($columns = ['*'])
     {
-        return $this->decryptCollection($this->repository->all());
+        return $this->decryptCollection($this->inner->get($columns));
     }
 
-    public function whereForm(string $handle)
+    public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null)
     {
-        return $this->decryptCollection($this->repository->whereForm($handle));
+        $paginator = $this->inner->paginate($perPage, $columns, $pageName, $page);
+        $paginator->setCollection($this->decryptCollection($paginator->getCollection()));
+
+        return $paginator;
     }
 
-    public function whereInForm(array $handles)
+    public function __call($method, $args)
     {
-        return $this->decryptCollection($this->repository->whereInForm($handles));
-    }
+        $result = $this->inner->{$method}(...$args);
 
-    public function find($id)
-    {
-        $submission = $this->repository->find($id);
-
-        if ($submission) {
-            $this->decryptSubmission($submission);
+        if ($result === $this->inner) {
+            return $this;
         }
 
-        return $submission;
-    }
-
-    public function make()
-    {
-        return $this->repository->make();
-    }
-
-    public function query()
-    {
-        return new DecryptingSubmissionQueryBuilder(
-            $this->repository->query(),
-            $this->encryptor,
-            $this->resolver,
-        );
-    }
-
-    public function save($entry)
-    {
-        return $this->repository->save($entry);
-    }
-
-    public function delete($entry)
-    {
-        return $this->repository->delete($entry);
+        return $result;
     }
 
     protected function decryptCollection($submissions)
