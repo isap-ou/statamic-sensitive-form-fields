@@ -1,0 +1,37 @@
+{
+    "name": "isapp/statamic-sensitive-form-fields",
+    "autoload": {
+        "psr-4": {
+            "Isapp\\SensitiveFormFields\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Isapp\\SensitiveFormFields\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.8"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Sensitive Form Fields",
+            "description": "Sensitive Form Fields addon"
+        },
+        "laravel": {
+            "providers": [
+                "Isapp\\SensitiveFormFields\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
