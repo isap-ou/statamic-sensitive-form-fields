@@ -61,17 +61,22 @@ class SensitiveFieldsTest extends TestCase
             'message' => 'Hello!',
         ], $data));
 
-        // Use $submission->save() to trigger SubmissionSaving event
         $submission->save();
 
         return $submission;
     }
 
+    protected function enableProMode(): void
+    {
+        app()->bind('isapp.sensitive-form-fields.pro', fn () => true);
+    }
+
+    // --- Encryption on write ---
+
     public function test_sensitive_field_is_stored_encrypted()
     {
         $submission = $this->createSubmission();
 
-        // After save, the submission data has been mutated by the listener
         $this->assertStringStartsWith('enc:v1:', $submission->get('email'));
         $this->assertStringStartsWith('enc:v1:', $submission->get('message'));
     }
@@ -83,7 +88,34 @@ class SensitiveFieldsTest extends TestCase
         $this->assertSame('John Doe', $submission->get('name'));
     }
 
-    public function test_authorized_user_reads_plaintext()
+    public function test_already_encrypted_value_is_not_double_encrypted()
+    {
+        $encryptor = app(FieldEncryptor::class);
+        $preEncrypted = $encryptor->encrypt('john@example.com');
+
+        $submission = $this->createSubmission(['email' => $preEncrypted]);
+
+        $this->assertSame($preEncrypted, $submission->get('email'));
+        $this->assertSame('john@example.com', $encryptor->decrypt($submission->get('email')));
+    }
+
+    // --- FREE mode (default): all users see decrypted ---
+
+    public function test_free_mode_all_users_see_decrypted_value()
+    {
+        $submission = $this->createSubmission();
+
+        $user = User::make()->id('free-user')->email('free@test.com');
+        $user->save();
+        $this->actingAs($user);
+
+        $found = FormSubmission::find($submission->id());
+
+        $this->assertSame('john@example.com', $found->get('email'));
+        $this->assertSame('Hello!', $found->get('message'));
+    }
+
+    public function test_free_mode_super_admin_sees_decrypted_value()
     {
         $submission = $this->createSubmission();
 
@@ -97,8 +129,26 @@ class SensitiveFieldsTest extends TestCase
         $this->assertSame('John Doe', $found->get('name'));
     }
 
-    public function test_unauthorized_user_reads_masked_value()
+    // --- PRO mode: permission-based access control ---
+
+    public function test_pro_mode_super_admin_reads_plaintext()
     {
+        $this->enableProMode();
+        $submission = $this->createSubmission();
+
+        $user = User::make()->makeSuper();
+        $this->actingAs($user);
+
+        $found = FormSubmission::find($submission->id());
+
+        $this->assertSame('john@example.com', $found->get('email'));
+        $this->assertSame('Hello!', $found->get('message'));
+        $this->assertSame('John Doe', $found->get('name'));
+    }
+
+    public function test_pro_mode_unauthorized_user_reads_masked_value()
+    {
+        $this->enableProMode();
         $submission = $this->createSubmission();
 
         $user = User::make()->id('test-user')->email('test@test.com');
@@ -112,8 +162,9 @@ class SensitiveFieldsTest extends TestCase
         $this->assertSame('John Doe', $found->get('name'));
     }
 
-    public function test_user_with_permission_reads_plaintext()
+    public function test_pro_mode_user_with_permission_reads_plaintext()
     {
+        $this->enableProMode();
         $submission = $this->createSubmission();
 
         $role = Role::make()->handle('sensitive-reader')
@@ -132,17 +183,31 @@ class SensitiveFieldsTest extends TestCase
         $this->assertSame('Hello!', $found->get('message'));
     }
 
-    public function test_already_encrypted_value_is_not_double_encrypted()
+    // --- Query builder path (CP submissions list) ---
+
+    public function test_query_builder_decrypts_for_super_admin_in_free_mode()
     {
-        $encryptor = app(FieldEncryptor::class);
-        $preEncrypted = $encryptor->encrypt('john@example.com');
+        $this->createSubmission();
 
-        $submission = $this->createSubmission(['email' => $preEncrypted]);
+        $user = User::make()->makeSuper();
+        $this->actingAs($user);
 
-        // Should be the same encrypted value, not double-encrypted
-        $this->assertSame($preEncrypted, $submission->get('email'));
+        $results = FormSubmission::query()->where('form', 'contact')->get();
 
-        // And it should still decrypt correctly
-        $this->assertSame('john@example.com', $encryptor->decrypt($submission->get('email')));
+        $this->assertSame('john@example.com', $results->first()->get('email'));
+    }
+
+    public function test_query_builder_masks_for_unauthorized_user_in_pro_mode()
+    {
+        $this->enableProMode();
+        $this->createSubmission();
+
+        $user = User::make()->id('qb-user')->email('qb@test.com');
+        $user->save();
+        $this->actingAs($user);
+
+        $results = FormSubmission::query()->where('form', 'contact')->get();
+
+        $this->assertSame('••••••', $results->first()->get('email'));
     }
 }
