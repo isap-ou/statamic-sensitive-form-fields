@@ -28,7 +28,9 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon()
     {
-        $this->registerPermission();
+        if (app(FieldEncryptor::class)->isPro()) {
+            $this->registerPermission();
+        }
         $this->appendFieldConfig();
         $this->decorateRepository();
     }

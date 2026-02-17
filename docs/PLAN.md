@@ -98,6 +98,48 @@ tests/
 
 ---
 
+## FREE vs PRO
+
+### FREE
+- Encryption at rest: sensitive fields encrypted before storage.
+- All authorized CP users see decrypted values (no access control).
+- No masking.
+
+### PRO (`pro` setting toggle)
+- Permission-based access control: only super admins and users with `view decrypted sensitive fields` permission see decrypted values.
+- Unauthorized users see mask string (default `••••••`, configurable).
+- Permission is registered only when PRO mode is enabled.
+
+---
+
+## PRO Plan
+
+### Recursive re-save commands (existing submissions)
+
+Planned as PRO-only operational commands for bulk migration of historical submissions.
+
+1. `sensitive-fields:encrypt-existing`
+   - Recursively iterates all forms and all existing submissions.
+   - Resolves sensitive handles from each form blueprint.
+   - Encrypts only unmarked plaintext values (`enc:v1:` guard prevents double encryption).
+   - Persists updated submissions back to storage (Stache/Eloquent) via normal save flow.
+
+2. `sensitive-fields:decrypt-existing`
+   - Recursively iterates all forms and all existing submissions.
+   - Resolves sensitive handles from each form blueprint.
+   - Decrypts values marked with `enc:v1:`.
+   - Persists updated submissions as plaintext.
+
+### Command behavior requirements
+
+- Works for both Stache and Eloquent driver.
+- Idempotent runs (safe to execute repeatedly).
+- Graceful per-submission error handling (log warning, continue processing).
+- Summary output: processed forms/submissions, updated values, skipped values, errors.
+- Optional filters (for implementation phase): by form handle, dry-run mode, chunk size.
+
+---
+
 ## Tests
 
 ### Unit (FieldEncryptorTest)
@@ -122,8 +164,7 @@ tests/
 ## Known Limitations
 
 1. **Search/filtering** — encrypted fields cannot be searched (ciphertext is opaque)
-2. **APP_KEY rotation** — makes existing data unreadable; no migration tool
+2. **APP_KEY rotation** — makes existing data unreadable without migration; PRO plan includes recursive encrypt/decrypt re-save commands for bulk remediation
 3. **Complex field types** — only string values encrypted; arrays/grids/replicator skipped
 4. **Export** — decrypted or masked based on user permission
 5. **API access** — encrypted/masked unless user has permission
-6. **Query builder** — `query()` results not auto-decrypted; use `find()`, `whereForm()`, `all()`

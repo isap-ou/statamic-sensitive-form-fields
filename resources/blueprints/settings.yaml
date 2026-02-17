@@ -12,11 +12,3 @@ tabs:
               instructions: "Enable or disable field encryption."
               default: true
               width: 50
-          -
-            handle: mask
-            field:
-              type: text
-              display: Mask String
-              instructions: "The string shown to unauthorized users instead of the decrypted value."
-              default: "••••••"
-              width: 50
