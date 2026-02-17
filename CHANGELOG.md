@@ -6,6 +6,8 @@ This changelog is used as the base for GitHub Release notes.
 
 ## Unreleased
 
+## 1.0.0 (2026-02-17)
+
 - [new] Per-field `sensitive` toggle on Text and Textarea fieldtypes in the form blueprint editor
 - [new] Sensitive field values are encrypted at rest using Laravel's `Crypt` with an `enc:v1:` prefix — no double encryption
 - [new] Fields are encrypted automatically on form submission via a `SubmissionSaving` listener
