@@ -13,17 +13,19 @@
 ```
 src/
 ├── Commands/
-│   ├── EncryptExistingCommand.php  # [PRO] Bulk-encrypt existing submissions
-│   └── DecryptExistingCommand.php  # [PRO] Bulk-decrypt existing submissions
+│   ├── EncryptExistingCommand.php           # [PRO] Bulk-encrypt existing submissions
+│   └── DecryptExistingCommand.php           # [PRO] Bulk-decrypt existing submissions
 ├── Encryption/
-│   └── FieldEncryptor.php          # Encrypt/decrypt logic with enc:v1: marker
+│   └── FieldEncryptor.php                   # Encrypt/decrypt logic with enc:v1: marker
 ├── Listeners/
-│   └── EncryptSensitiveFields.php  # SubmissionSaving event listener
+│   └── EncryptSensitiveFields.php           # SubmissionSaving event listener
 ├── Repositories/
-│   └── DecryptingSubmissionRepository.php  # Decorator for read-path decryption
+│   ├── DecryptingSubmissionRepository.php   # Decorator for read-path decryption (find/whereForm/all/query)
+│   ├── DecryptingSubmissionQueryBuilder.php # Decorator wrapping query() results
+│   └── RawSubmissionRepository.php          # Marker interface for undecorated repository (used by PRO commands)
 ├── Support/
-│   └── SensitiveFieldResolver.php  # Resolves sensitive handles from blueprint
-└── ServiceProvider.php             # Wires everything together
+│   └── SensitiveFieldResolver.php           # Resolves sensitive handles from blueprint
+└── ServiceProvider.php                      # Wires everything together
 
 resources/
 └── blueprints/
@@ -49,8 +51,8 @@ tests/
 
 ### Read Path (Decryption)
 
-1. Code requests a submission via the repository (`find`, `whereForm`, `all`).
-2. `DecryptingSubmissionRepository` decorator intercepts the result.
+1. Code requests a submission via the repository (`find`, `whereForm`, `all`, or `query()`).
+2. `DecryptingSubmissionRepository` decorator intercepts the result; `query()` is wrapped by `DecryptingSubmissionQueryBuilder`.
 3. For each submission, it:
    - Resolves sensitive field handles from the form's blueprint.
    - Checks the current user's permission (`view decrypted sensitive fields`).
@@ -89,8 +91,9 @@ vendor/bin/phpunit
 
 ### Test Coverage
 
-- **Unit tests** (`FieldEncryptorTest`): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, custom marker support.
-- **Feature tests** (`SensitiveFieldsTest`): full write/read flow with authorization, masked output for unauthorized users, non-sensitive field passthrough, disabled addon bypass.
+- **Unit tests** (`FieldEncryptorTest`, 7 tests): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, mask value.
+- **Feature tests** (`SensitiveFieldsTest`, 10 tests): full write/read flow, free/pro mode, permission-based masking, query-builder decryption.
+- **PRO command tests** (`ProCommandsTest`, 6 tests): bulk encrypt/decrypt, dry-run, skip-already-encrypted.
 
 ### PRO Commands
 

@@ -91,7 +91,6 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 - **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
 - **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
 - **API** — REST and GraphQL responses respect the same permission rules (Pro)
-- **Query builder** — submissions retrieved via `query()` are not automatically decrypted; use `find()`, `whereForm()`, or `all()`
 
 ---
 

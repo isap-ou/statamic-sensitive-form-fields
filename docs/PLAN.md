@@ -35,15 +35,20 @@ Data flow:
 
 ```
 src/
-├── ServiceProvider.php              ← wires permission, field config, repository decorator
+├── ServiceProvider.php                          ← wires permission, field config, repository decorator
+├── Commands/
+│   ├── EncryptExistingCommand.php               ← [PRO] bulk-encrypt existing submissions
+│   └── DecryptExistingCommand.php               ← [PRO] bulk-decrypt existing submissions
 ├── Encryption/
-│   └── FieldEncryptor.php           ← encrypt/decrypt + marker logic + addon settings
+│   └── FieldEncryptor.php                       ← encrypt/decrypt + marker logic + addon settings
 ├── Listeners/
-│   └── EncryptSensitiveFields.php   ← SubmissionSaving listener (auto-discovered)
+│   └── EncryptSensitiveFields.php               ← SubmissionSaving listener (auto-discovered)
 ├── Repositories/
-│   └── DecryptingSubmissionRepository.php  ← decorator
+│   ├── DecryptingSubmissionRepository.php       ← decorator (find/whereForm/all/query)
+│   ├── DecryptingSubmissionQueryBuilder.php     ← decorator wrapping query() results
+│   └── RawSubmissionRepository.php              ← marker interface for undecorated repo
 └── Support/
-    └── SensitiveFieldResolver.php   ← reads blueprint, returns sensitive handles
+    └── SensitiveFieldResolver.php               ← reads blueprint, returns sensitive handles
 
 resources/
 └── blueprints/
@@ -85,7 +90,18 @@ tests/
 - Implements `SubmissionRepository`.
 - Wraps original repository.
 - Read methods (`find`, `whereForm`, `whereInForm`, `all`): post-process with decrypt/mask.
-- Write methods (`save`, `delete`, `make`, `query`): delegate directly.
+- `query()`: returns `DecryptingSubmissionQueryBuilder` wrapping the inner query builder.
+- Write methods (`save`, `delete`, `make`): delegate directly.
+
+### DecryptingSubmissionQueryBuilder decorator
+- Implements `SubmissionQueryBuilderContract`.
+- Wraps the inner query builder via `__call` proxy for fluent builder methods.
+- `get()` and `paginate()`: post-process results with the same decrypt/mask logic.
+
+### RawSubmissionRepository marker interface
+- Extends `SubmissionRepository`, used as a typed container key.
+- Bound via `app()->instance()` inside `ServiceProvider::decorateRepository()` to the original (undecorated) repository.
+- Resolved by PRO commands to read and write raw submission data, bypassing the decorator and `SubmissionSaving` event.
 
 ### ServiceProvider
 - `register()`: singleton bindings for FieldEncryptor (with Addon DI) and SensitiveFieldResolver.
@@ -141,13 +157,13 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 - Summary output: processed / updated / skipped / errors.
 - `--form=<handle>` filter to target a single form.
 - `--dry-run` option to preview changes without writing.
-- Commands are always registered but fail with an error message when not in PRO mode.
+- Commands are registered only when the addon is in PRO mode (`bootAddon` checks `edition() === 'pro'`).
 
 ---
 
 ## Tests
 
-### Unit (FieldEncryptorTest)
+### Unit (FieldEncryptorTest, 7 tests)
 1. Encrypts value with marker prefix
 2. Decrypts back to plaintext
 3. No double encryption
@@ -156,13 +172,25 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 6. mask returns configured value
 7. decrypt returns non-encrypted as-is
 
-### Feature (SensitiveFieldsTest)
+### Feature (SensitiveFieldsTest, 10 tests)
 1. Sensitive field stored encrypted
 2. Non-sensitive field remains plain
-3. Authorized user reads plaintext
-4. Unauthorized user reads masked value
-5. User with permission reads plaintext
-6. Already-encrypted value not double-encrypted
+3. Already-encrypted value not double-encrypted
+4. Free mode — all users see decrypted value
+5. Free mode — super admin sees decrypted value
+6. Pro mode — super admin reads plaintext
+7. Pro mode — unauthorized user reads masked value
+8. Pro mode — user with permission reads plaintext
+9. Query builder decrypts for super admin in free mode
+10. Query builder masks for unauthorized user in pro mode
+
+### Feature PRO (ProCommandsTest, 6 tests)
+1. encrypt-existing encrypts plaintext sensitive fields
+2. encrypt-existing skips already-encrypted fields
+3. encrypt-existing dry-run does not persist
+4. decrypt-existing decrypts encrypted sensitive fields
+5. decrypt-existing skips plaintext sensitive fields
+6. decrypt-existing dry-run does not persist
 
 ---
 
