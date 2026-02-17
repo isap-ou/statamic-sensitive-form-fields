@@ -1,53 +1,94 @@
-Build a free Statamic 6 addon named “Sensitive Form Fields” that encrypts sensitive form submission fields “like an Eloquent encrypted cast” (encrypt-on-write, decrypt-on-read).
+# Development
 
-Why / business goal:
-EU sites often store form submissions containing sensitive personal data (email, phone, free-text messages) as plain text at rest (files/DB/backups). This increases security/GDPR exposure and the impact of a breach. The addon reduces exposure by storing selected fields encrypted at rest while keeping the admin UI and templates working with plaintext (cast-like behavior).
+## Requirements
 
-Core behavior:
-- Encrypt-on-write: before persisting a form submission, encrypt only fields marked as Sensitive.
-- Decrypt-on-read: whenever form submissions are read (CP views, exports, queries), automatically decrypt those sensitive fields back to plaintext for authorized users, without modifying stored ciphertext.
+- PHP 8.2+
+- Statamic 6
+- Laravel 12
 
-UI / configuration:
-- Add a per-field toggle in Statamic FORM blueprints: “Sensitive (encrypted at rest)” (default false).
-- Add this toggle to existing field settings via Fieldtype::appendConfigField / appendConfigFields.
-- Prefer applying it to form-usable text-like fieldtypes (text, textarea, email) to avoid complex nested data types.
+## Architecture
 
-Storage & drivers:
-- Must work with Statamic’s form submission storage regardless of driver (flat-file Stache and Eloquent Driver).
-- Do NOT rely on dedicated DB columns; treat submission data as a key/value payload.
+### File Tree
 
-Implementation approach (recommended):
-1) Encrypt-on-write:
-    - Listen to Statamic\Events\FormSubmitted (or SubmissionCreating) and mutate $submission->data() before it is persisted.
-2) Decrypt-on-read (cast-like):
-    - Implement a repository decorator or equivalent interception around the Form Submission repository so that:
-        - find/query results return submissions with decrypted values for sensitive fields
-        - save persists encrypted values for sensitive fields
-    - Decryption should be runtime-only (do not rewrite storage files/DB on read).
+```
+src/
+├── Encryption/
+│   └── FieldEncryptor.php          # Encrypt/decrypt logic with enc:v1: marker
+├── Listeners/
+│   └── EncryptSensitiveFields.php  # SubmissionSaving event listener
+├── Repositories/
+│   └── DecryptingSubmissionRepository.php  # Decorator for read-path decryption
+├── Support/
+│   └── SensitiveFieldResolver.php  # Resolves sensitive handles from blueprint
+└── ServiceProvider.php             # Wires everything together
 
-Encryption details:
-- Use Laravel Crypt with APP_KEY: Crypt::encryptString / Crypt::decryptString.
-- Store ciphertext with a detectable marker to prevent double-encryption, e.g. "enc:v1:" prefix.
-- If a value is already encrypted (has prefix), do not encrypt again.
-- If decrypt fails (key rotation/corrupt data), fail gracefully: return the raw ciphertext and log a warning (no fatal errors).
+resources/
+└── blueprints/
+    └── settings.yaml               # Addon settings blueprint (enabled, mask)
 
-Security / access control:
-- Add a permission like “view decrypted sensitive fields”.
-- If user lacks permission, keep ciphertext in CP/export output (or optionally mask).
-- Do not collect extra metadata (no IP, no user agent, no tracking).
+tests/
+├── Unit/
+│   └── FieldEncryptorTest.php      # 7 unit tests for encryption logic
+└── Feature/
+    └── SensitiveFieldsTest.php     # 6 feature tests for full flow
+```
 
-Deliverables:
-- Complete package file tree (composer.json, service provider, config, listeners, repository decorator, permissions).
-- Code that:
-    - reads the form blueprint, identifies handles with sensitive toggle enabled
-    - encrypts those values on submit before persistence
-    - decrypts those values on read for authorized users
-- Minimal tests:
-    - sensitive fields are stored encrypted (prefix present in storage payload)
-    - reading a submission returns plaintext for authorized user
-    - reading returns ciphertext/masked for unauthorized user
-    - non-sensitive fields remain plain
-    - already-encrypted values are not double-encrypted
-- Marketplace-focused README.md:
-    - business value, feature list, install/usage, limitations (search/filtering, APP_KEY rotation), and permission behavior
-    - avoid “GDPR compliant” claims
+### Write Path (Encryption)
+
+1. User submits a form.
+2. Statamic dispatches `SubmissionSaving` event before persistence.
+3. `EncryptSensitiveFields` listener:
+   - Checks if addon is enabled (via addon settings).
+   - Resolves sensitive field handles from the form's blueprint.
+   - Encrypts string values using `FieldEncryptor`, prepending `enc:v1:` marker.
+   - Skips already-encrypted values (prevents double-encryption).
+   - Mutates `$submission->data()` in place before persistence.
+
+### Read Path (Decryption)
+
+1. Code requests a submission via the repository (`find`, `whereForm`, `all`).
+2. `DecryptingSubmissionRepository` decorator intercepts the result.
+3. For each submission, it:
+   - Resolves sensitive field handles from the form's blueprint.
+   - Checks the current user's permission (`view decrypted sensitive fields`).
+   - **Authorized**: strips `enc:v1:` prefix and decrypts the value.
+   - **Unauthorized**: replaces the value with the mask string (default `••••••`).
+4. If decryption fails (e.g. key rotation), returns raw ciphertext and logs a warning.
+
+### Addon Settings
+
+Settings are managed via Statamic's addon settings UI (CP > Tools > Addons > Sensitive Form Fields > Settings), defined in `resources/blueprints/settings.yaml`:
+
+- **Enabled** — global toggle for encryption (default: `true`)
+- **Mask String** — value shown to unauthorized users (default: `••••••`)
+
+No config file is published. Settings are stored by Statamic's addon settings system.
+
+### Permission
+
+The addon registers a custom permission: **"View Decrypted Sensitive Fields"** under the Forms permission group. Super admins always have this permission implicitly.
+
+### Field Configuration
+
+A "Sensitive (encrypted at rest)" toggle is appended to all fieldtype config panels via `Fieldtype::appendConfigField()`. Form builders enable it per-field in the blueprint editor.
+
+## Testing
+
+Run the full test suite:
+
+```bash
+vendor/bin/phpunit
+```
+
+### Test Coverage
+
+- **Unit tests** (`FieldEncryptorTest`): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, custom marker support.
+- **Feature tests** (`SensitiveFieldsTest`): full write/read flow with authorization, masked output for unauthorized users, non-sensitive field passthrough, disabled addon bypass.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Write tests for your changes.
+4. Run `vendor/bin/phpunit` and ensure all tests pass.
+5. Submit a pull request.
