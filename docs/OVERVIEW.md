@@ -12,6 +12,9 @@
 
 ```
 src/
+├── Commands/
+│   ├── EncryptExistingCommand.php  # [PRO] Bulk-encrypt existing submissions
+│   └── DecryptExistingCommand.php  # [PRO] Bulk-decrypt existing submissions
 ├── Encryption/
 │   └── FieldEncryptor.php          # Encrypt/decrypt logic with enc:v1: marker
 ├── Listeners/
@@ -60,9 +63,13 @@ tests/
 Settings are managed via Statamic's addon settings UI (CP > Tools > Addons > Sensitive Form Fields > Settings), defined in `resources/blueprints/settings.yaml`:
 
 - **Enabled** — global toggle for encryption (default: `true`)
-- **Mask String** — value shown to unauthorized users (default: `••••••`)
+- **Mask String** — PRO only; value shown to unauthorized users (default: `••••••`)
 
 No config file is published. Settings are stored by Statamic's addon settings system.
+
+### Editions
+
+The addon supports Statamic Editions (`"editions": ["free", "pro"]` in `composer.json`). Edition is detected at runtime via `Addon::edition()`, which reads `config('statamic.editions.addons.isapp/statamic-sensitive-form-fields')`. When unconfigured, the first edition (`free`) is used. PRO is activated by the Statamic Marketplace license system or by setting the config value manually.
 
 ### Permission
 
@@ -84,6 +91,20 @@ vendor/bin/phpunit
 
 - **Unit tests** (`FieldEncryptorTest`): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, custom marker support.
 - **Feature tests** (`SensitiveFieldsTest`): full write/read flow with authorization, masked output for unauthorized users, non-sensitive field passthrough, disabled addon bypass.
+
+### PRO Commands
+
+Two Artisan commands for bulk migration of historical submissions are available in PRO mode. Both are **idempotent** — safe to run multiple times. Both support `--form=<handle>` to target a single form and `--dry-run` to preview changes without writing.
+
+```bash
+# Encrypt all plaintext sensitive fields in existing submissions
+php artisan sensitive-fields:encrypt-existing
+
+# Decrypt all encrypted sensitive fields in existing submissions
+php artisan sensitive-fields:decrypt-existing
+```
+
+The commands read from the underlying (raw) storage directly — bypassing the `DecryptingSubmissionRepository` decorator — and write back via the repository's `save()` method without firing `SubmissionSaving`, preventing re-encryption on decrypt.
 
 ## Contributing
 

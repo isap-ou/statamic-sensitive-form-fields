@@ -8,6 +8,8 @@ use Statamic\Contracts\Forms\Form;
 
 class SensitiveFieldResolver
 {
+    // Per-request cache keyed by form handle — avoids re-reading the blueprint
+    // on every submission read when iterating a list of submissions.
     protected array $cache = [];
 
     public function resolve(Form $form): array

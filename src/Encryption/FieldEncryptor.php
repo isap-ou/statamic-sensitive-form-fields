@@ -10,12 +10,15 @@ use Statamic\Addons\Addon;
 
 class FieldEncryptor
 {
+    // Versioned prefix prepended to every ciphertext.
+    // Allows detecting already-encrypted values and future format migrations.
     protected const PREFIX = 'enc:v1:';
 
     public function __construct(
         protected Addon $addon,
     ) {}
 
+    // Idempotent: returns the value unchanged if it is already encrypted.
     public function encrypt(string $value): string
     {
         if ($this->isEncrypted($value)) {
@@ -25,6 +28,9 @@ class FieldEncryptor
         return self::PREFIX . Crypt::encryptString($value);
     }
 
+    // Returns the value unchanged (with a log warning) on decryption failure,
+    // e.g. after an APP_KEY rotation. Callers should treat the raw ciphertext
+    // as an opaque fallback rather than a fatal error.
     public function decrypt(string $value): string
     {
         if (! $this->isEncrypted($value)) {
@@ -48,11 +54,6 @@ class FieldEncryptor
     public function isEnabled(): bool
     {
         return (bool) ($this->addon->setting('enabled') ?? true);
-    }
-
-    public function isPro(): bool
-    {
-        return app()->bound('isapp.sensitive-form-fields.pro');
     }
 
     public function mask(): string

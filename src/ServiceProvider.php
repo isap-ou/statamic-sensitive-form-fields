@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Isapp\SensitiveFormFields;
 
+use Isapp\SensitiveFormFields\Commands\DecryptExistingCommand;
+use Isapp\SensitiveFormFields\Commands\EncryptExistingCommand;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Repositories\DecryptingSubmissionRepository;
+use Isapp\SensitiveFormFields\Repositories\RawSubmissionRepository;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
 use Statamic\Contracts\Forms\SubmissionRepository;
 use Statamic\Facades\Permission;
@@ -28,16 +31,20 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon()
     {
-        $this->registerSettings();
+        $isPro = $this->getAddon()->edition() === 'pro';
 
-        if (app(FieldEncryptor::class)->isPro()) {
+        $this->registerSettings($isPro);
+
+        if ($isPro) {
             $this->registerPermission();
+            $this->registerCommands();
         }
+
         $this->appendFieldConfig();
         $this->decorateRepository();
     }
 
-    protected function registerSettings(): void
+    protected function registerSettings(bool $isPro): void
     {
         $fields = [
             [
@@ -52,7 +59,7 @@ class ServiceProvider extends AddonServiceProvider
             ],
         ];
 
-        if (app(FieldEncryptor::class)->isPro()) {
+        if ($isPro) {
             $fields[] = [
                 'handle' => 'mask',
                 'field' => [
@@ -76,7 +83,7 @@ class ServiceProvider extends AddonServiceProvider
         ]);
     }
 
-    protected function registerPermission(): void
+    private function registerPermission(): void
     {
         Permission::extend(function () {
             Permission::register('view decrypted sensitive fields')
@@ -87,6 +94,9 @@ class ServiceProvider extends AddonServiceProvider
 
     protected function appendFieldConfig(): void
     {
+        // Scoped to Text and Textarea only — the fieldtypes used in form blueprints.
+        // Intentionally not registered on the global Fieldtype base to avoid
+        // showing the toggle on content entry fields.
         $config = [
             'type' => 'toggle',
             'display' => __('statamic-sensitive-form-fields::messages.field_toggle_display'),
@@ -101,12 +111,28 @@ class ServiceProvider extends AddonServiceProvider
 
     protected function decorateRepository(): void
     {
+        // extend() is lazy: the callback runs the first time SubmissionRepository
+        // is resolved from the container, not at boot time.
         $this->app->extend(SubmissionRepository::class, function (SubmissionRepository $repository, $app) {
+            // Expose the original repository under a typed key so PRO commands
+            // can read and write raw (unprocessed) submission data, bypassing
+            // the decryption decorator and the SubmissionSaving event.
+            $app->instance(RawSubmissionRepository::class, $repository);
+
             return new DecryptingSubmissionRepository(
                 $repository,
                 $app->make(FieldEncryptor::class),
                 $app->make(SensitiveFieldResolver::class),
+                $this->getAddon(),
             );
         });
+    }
+
+    private function registerCommands(): void
+    {
+        $this->commands([
+            EncryptExistingCommand::class,
+            DecryptExistingCommand::class,
+        ]);
     }
 }

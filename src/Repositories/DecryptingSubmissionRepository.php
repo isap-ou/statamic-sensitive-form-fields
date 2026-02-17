@@ -7,6 +7,7 @@ namespace Isapp\SensitiveFormFields\Repositories;
 use Illuminate\Support\Facades\Auth;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
+use Statamic\Addons\Addon;
 use Statamic\Contracts\Forms\Submission;
 use Statamic\Contracts\Forms\SubmissionRepository;
 
@@ -16,6 +17,7 @@ class DecryptingSubmissionRepository implements SubmissionRepository
         protected SubmissionRepository $repository,
         protected FieldEncryptor $encryptor,
         protected SensitiveFieldResolver $resolver,
+        protected Addon $addon,
     ) {}
 
     public function all()
@@ -55,6 +57,7 @@ class DecryptingSubmissionRepository implements SubmissionRepository
             $this->repository->query(),
             $this->encryptor,
             $this->resolver,
+            $this->addon,
         );
     }
 
@@ -85,7 +88,9 @@ class DecryptingSubmissionRepository implements SubmissionRepository
             return;
         }
 
-        $canDecrypt = ! $this->encryptor->isPro() || $this->isAuthorized();
+        // FREE: all authenticated users can read decrypted values.
+        // PRO: only super admins and users with the dedicated permission can.
+        $canDecrypt = $this->addon->edition() !== 'pro' || $this->isAuthorized();
 
         foreach ($sensitiveHandles as $handle) {
             $value = $submission->get($handle);
@@ -114,6 +119,7 @@ class DecryptingSubmissionRepository implements SubmissionRepository
             return false;
         }
 
+        // Super admins bypass the explicit permission check.
         if ($user->isSuper()) {
             return true;
         }

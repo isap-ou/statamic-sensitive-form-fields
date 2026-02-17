@@ -68,7 +68,7 @@ class SensitiveFieldsTest extends TestCase
 
     protected function enableProMode(): void
     {
-        app()->bind('isapp.sensitive-form-fields.pro', fn () => true);
+        config(['statamic.editions.addons.isapp/statamic-sensitive-form-fields' => 'pro']);
     }
 
     // --- Encryption on write ---

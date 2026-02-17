@@ -39,7 +39,8 @@
     "extra": {
         "statamic": {
             "name": "Sensitive Form Fields",
-            "description": "Encrypt selected form submission fields at rest. Decrypt on read for authorized users only."
+            "description": "Encrypt selected form submission fields at rest. Decrypt on read for authorized users only.",
+            "editions": ["free", "pro"]
         },
         "laravel": {
             "providers": [
