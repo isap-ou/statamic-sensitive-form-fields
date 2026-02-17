@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields\Encryption;
 
 use Illuminate\Support\Facades\Crypt;
@@ -20,7 +22,7 @@ class FieldEncryptor
             return $value;
         }
 
-        return self::PREFIX.Crypt::encryptString($value);
+        return self::PREFIX . Crypt::encryptString($value);
     }
 
     public function decrypt(string $value): string
@@ -30,9 +32,9 @@ class FieldEncryptor
         }
 
         try {
-            return Crypt::decryptString(substr($value, strlen(self::PREFIX)));
+            return Crypt::decryptString(substr($value, \strlen(self::PREFIX)));
         } catch (\Throwable $e) {
-            Log::warning('Failed to decrypt sensitive field value: '.$e->getMessage());
+            Log::warning('Failed to decrypt sensitive field value: ' . $e->getMessage());
 
             return $value;
         }

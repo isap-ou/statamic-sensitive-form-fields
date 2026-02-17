@@ -53,6 +53,11 @@ Build and maintain a free Statamic 6 addon named `Sensitive Form Fields` that:
 - Validate unauthorized non-plaintext reads.
 - Validate no double encryption.
 - Validate non-sensitive plaintext retention.
+- Do NOT run tests after every change. Only run tests before committing or when explicitly asked.
+
+## Git Commits
+- Never mention Claude or AI co-authorship in commit messages.
+- Do not add `Co-Authored-By` lines referencing Claude.
 
 ## Ongoing Maintenance
 - If behavior decisions change, record them immediately in Claude memory.

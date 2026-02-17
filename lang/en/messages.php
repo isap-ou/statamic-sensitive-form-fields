@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'field_toggle_display' => 'Sensitive (encrypted at rest)',
     'field_toggle_instructions' => 'When enabled, this field\'s value will be encrypted before storage.',

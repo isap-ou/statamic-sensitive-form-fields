@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields\Tests\Unit;
 
-use Illuminate\Support\Facades\Crypt;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Tests\TestCase;
 

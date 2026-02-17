@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields\Listeners;
 
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
@@ -25,11 +27,11 @@ class EncryptSensitiveFields
         foreach ($sensitiveHandles as $handle) {
             $value = $submission->get($handle);
 
-            if (is_null($value) || $value === '') {
+            if (\is_null($value) || $value === '') {
                 continue;
             }
 
-            if (! is_string($value)) {
+            if (! \is_string($value)) {
                 continue;
             }
 

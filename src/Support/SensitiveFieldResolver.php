@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields\Support;
 
 use Statamic\Contracts\Forms\Form;

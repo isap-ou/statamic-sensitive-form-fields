@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields;
 
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;

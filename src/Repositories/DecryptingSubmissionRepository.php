@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Isapp\SensitiveFormFields\Repositories;
 
 use Illuminate\Support\Facades\Auth;
@@ -84,7 +86,7 @@ class DecryptingSubmissionRepository implements SubmissionRepository
         foreach ($sensitiveHandles as $handle) {
             $value = $submission->get($handle);
 
-            if (is_null($value) || $value === '' || ! is_string($value)) {
+            if (\is_null($value) || $value === '' || ! \is_string($value)) {
                 continue;
             }
 

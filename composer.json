@@ -14,7 +14,8 @@
         "statamic/cms": "^6.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^10.8"
+        "orchestra/testbench": "^10.8",
+        "laravel/pint": "^1.27"
     },
     "config": {
         "allow-plugins": {
