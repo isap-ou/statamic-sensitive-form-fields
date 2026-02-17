@@ -26,10 +26,22 @@ This document defines how to maintain `CHANGELOG.md` in the project root.
 - Keep newest version at the top
 - Keep an `## Unreleased` section at the top while developing
 
+## Checking Release Status
+
+Before any release-related work, check what has actually been released:
+
+```bash
+git tag                  # list all version tags
+gh release list          # list GitHub Releases
+```
+
+A version section in `CHANGELOG.md` (e.g. `## 1.0.0`) does **not** mean it was released — verify with the commands above. Only entries backed by a git tag and a GitHub Release are considered shipped.
+
 ## Release Procedure (when user says "release X.Y.Z")
 
 1. Pre-checks:
    - Ensure working tree is clean: `git status`
+   - Confirm no existing tag for this version: `git tag`
    - Run tests: `vendor/bin/phpunit`
    - Run style check: `vendor/bin/pint --test`
    - Verify `CHANGELOG.md` has entries under `## Unreleased`
