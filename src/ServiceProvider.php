@@ -28,11 +28,52 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon()
     {
+        $this->registerSettings();
+
         if (app(FieldEncryptor::class)->isPro()) {
             $this->registerPermission();
         }
         $this->appendFieldConfig();
         $this->decorateRepository();
+    }
+
+    protected function registerSettings(): void
+    {
+        $fields = [
+            [
+                'handle' => 'enabled',
+                'field' => [
+                    'type' => 'toggle',
+                    'display' => __('statamic-sensitive-form-fields::messages.settings_enabled_display'),
+                    'instructions' => __('statamic-sensitive-form-fields::messages.settings_enabled_instructions'),
+                    'default' => true,
+                    'width' => 50,
+                ],
+            ],
+        ];
+
+        if (app(FieldEncryptor::class)->isPro()) {
+            $fields[] = [
+                'handle' => 'mask',
+                'field' => [
+                    'type' => 'text',
+                    'display' => __('statamic-sensitive-form-fields::messages.settings_mask_display'),
+                    'instructions' => __('statamic-sensitive-form-fields::messages.settings_mask_instructions'),
+                    'default' => '••••••',
+                    'width' => 50,
+                ],
+            ];
+        }
+
+        $this->registerSettingsBlueprint([
+            'tabs' => [
+                'main' => [
+                    'sections' => [
+                        ['fields' => $fields],
+                    ],
+                ],
+            ],
+        ]);
     }
 
     protected function registerPermission(): void
