@@ -1,26 +1,50 @@
-# Changelog
+# CHANGELOG Rules
 
-This project's changelog is maintained through GitHub Releases:
+This document defines how to maintain `CHANGELOG.md` in the project root.
 
-- https://github.com/isapp/statamic-sensitive-form-fields/releases
+## Source and Purpose
 
-Each release is release notes attached to a Git tag.
-Learn how to create releases:
+- Changelog file: `CHANGELOG.md` (project root)
+- This file is the source for GitHub Release notes
+- Releases page: https://github.com/isapp/statamic-sensitive-form-fields/releases
 
-- https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
+## Entry Format
 
-## Release Notes Format
+- Marketplace badge tags:
+  - `[new]` for new functionality
+  - `[fix]` for bug fixes
+- Example entries:
+  - `- [new] Added per-field sensitive toggle`
+  - `- [fix] Prevented double encryption for already-marked values`
 
-You can use the following custom Markdown tags in release notes:
+## Version Format
 
-- `[new]` shows a **New** badge
-- `[fix]` shows a **Fixed** badge
+- Use SemVer: `MAJOR.MINOR.PATCH`
+- Tag format: no `v` prefix (`1.0.0`, not `v1.0.0`)
+- Version heading format in changelog:
+  - `## X.Y.Z (YYYY-MM-DD)`
+- Keep newest version at the top
+- Keep an `## Unreleased` section at the top while developing
 
-## Versioning and Tags
+## Release Procedure (when user says "release X.Y.Z")
 
-Use Semantic Versioning for all releases (for example, `1.0.0`).
-
-Create tags **without** the `v` prefix:
-
-- `1.0.0` (correct)
-- `v1.0.0` (avoid)
+1. Pre-checks:
+   - Ensure working tree is clean: `git status`
+   - Run tests: `vendor/bin/phpunit`
+   - Run style check: `vendor/bin/pint --test`
+   - Verify `CHANGELOG.md` has entries under `## Unreleased`
+2. Update `CHANGELOG.md`:
+   - Rename `## Unreleased` to `## X.Y.Z (YYYY-MM-DD)`
+   - Add a new empty `## Unreleased` section at the top
+3. Commit release changelog:
+   - `git add CHANGELOG.md`
+   - `git commit -m "chore: prepare release X.Y.Z"`
+4. Create git tag:
+   - `git tag X.Y.Z`
+5. Push branch and tag:
+   - `git push origin <branch>`
+   - `git push origin X.Y.Z`
+6. Create GitHub Release from that changelog section:
+   - `gh release create X.Y.Z --title "X.Y.Z" --notes "<release notes>"`
+7. Verify release:
+   - `gh release view X.Y.Z`

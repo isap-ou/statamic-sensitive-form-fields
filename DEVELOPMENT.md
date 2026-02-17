@@ -32,9 +32,10 @@ Architecture, data flow, and implementation details are in `docs/`:
 
 - [docs/OVERVIEW.md](docs/OVERVIEW.md) — architecture, file tree, data flow, settings, permissions
 - [docs/PLAN.md](docs/PLAN.md) — implementation plan and known limitations
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) — instructions for maintaining root `CHANGELOG.md`
 - [docs/statamic-building-addon.md](docs/statamic-building-addon.md) — Statamic addon reference
 - [docs/statamic-testing.md](docs/statamic-testing.md) — Statamic testing reference
-- [CHANGELOG.md](CHANGELOG.md) — release and changelog policy (GitHub Releases, tags, and note format)
+- [CHANGELOG.md](CHANGELOG.md) — release changelog entries used for GitHub Releases
 
 ## Releases and Changelog
 
