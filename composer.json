@@ -15,11 +15,14 @@
     },
     "require-dev": {
         "orchestra/testbench": "^10.8",
-        "laravel/pint": "^1.27"
+        "laravel/pint": "^1.27",
+        "captainhook/captainhook": "^5.28",
+        "captainhook/hook-installer": "^1.0"
     },
     "config": {
         "allow-plugins": {
-            "pixelfear/composer-dist-plugin": true
+            "pixelfear/composer-dist-plugin": true,
+            "captainhook/hook-installer": true
         }
     },
     "extra": {
