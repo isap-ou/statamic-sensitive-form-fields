@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Statamic\Addons\Addon;
 use Statamic\Facades\CP\Toast;
+use Statamic\Statamic;
 
 class FieldEncryptor
 {
@@ -52,14 +53,14 @@ class FieldEncryptor
         } catch (\Throwable $e) {
             Log::warning('Failed to decrypt sensitive field value: ' . $e->getMessage());
 
-            // Only dispatch CP toasts during HTTP (CP) requests.
-            // Commands and queue workers run in console context — skip entirely.
+            // Only dispatch CP toasts on actual CP requests — not API or frontend
+            // requests, which could consume the dedup window before a CP user visits.
             // Cache::add() is atomic set-if-not-exists; the key is rolled back via
             // Cache::forget() when toast delivery fails so the dedup window is not
             // consumed without a toast being shown. Wrapped in try/catch so that
             // cache or session failures never break the graceful fallback.
             try {
-                if (! app()->runningInConsole()) {
+                if (Statamic::isCpRoute()) {
                     $cacheKey = 'sffields.decrypt_failure_notified.' . ($context ?: 'unknown');
                     if (Cache::add($cacheKey, true, self::NOTIFY_TTL)) {
                         try {
