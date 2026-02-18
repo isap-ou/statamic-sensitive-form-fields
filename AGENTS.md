@@ -49,6 +49,18 @@ Instructions for AI agents working in this repository.
 - At session start, if any doc inconsistencies or staleness are discovered during initial reading, fix them immediately — do not wait for user instruction.
 - After adding a feature, fixing a bug, or changing any behavior or convention, sync the relevant docs before commit (see Documentation section for what to update and when).
 
+## Artisan Command Rules
+
+These rules apply whenever a new Artisan command is written or documented.
+
+**Idempotency:** Every bulk-operation command must be safe to run multiple times. Before writing, think: "what happens on the second run?" Guard against double-processing — skip values already in the target state, never overwrite data that cannot be recovered.
+
+**CLI secrets:** Never accept a production secret (APP_KEY, passwords, tokens) solely as a CLI argument — it leaks into shell history and `ps` output. Accept it via `$this->secret()` (hidden prompt) and make the CLI argument optional for non-interactive/CI use. Document both modes in README.
+
+**Documentation flow correctness:** When documenting a command that depends on external state (e.g. a key that must be rotated first), trace the exact execution order step by step before writing. Then re-read the written steps as a user would and verify the sequence is correct. Check every location in the docs where the same flow is described — README intro, usage section, and Limitations — and make sure they all say the same thing.
+
+**Doc cross-reference check:** After fixing a documentation error, grep for the incorrect phrase or concept across all `.md` files to catch duplicate occurrences before committing.
+
 ## Git / Commits / PR Rules
 
 - Do not commit or push unless the user explicitly asks.
