@@ -162,7 +162,9 @@ class RekeyCommandTest extends TestCase
 
     public function test_rekey_fails_without_old_key(): void
     {
-        $this->artisan('sensitive-fields:rekey')->assertExitCode(1);
+        $this->artisan('sensitive-fields:rekey')
+            ->expectsQuestion('Enter the previous APP_KEY (base64:... format, as stored in your .env)', '')
+            ->assertExitCode(1);
     }
 
     public function test_rekey_fails_with_invalid_old_key(): void

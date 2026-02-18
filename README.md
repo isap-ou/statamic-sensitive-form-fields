@@ -70,7 +70,13 @@ The command re-encrypts existing submissions using the **current** `APP_KEY`, so
 
 1. Back up the old `APP_KEY` value.
 2. Set the **new** `APP_KEY` in your `.env` (and clear config cache if necessary).
-3. Run the rekey command with the old key:
+3. Run the rekey command. When invoked without `--old-key`, it will prompt for the key interactively (input is hidden):
+
+```bash
+php artisan sensitive-fields:rekey
+```
+
+For non-interactive environments (CI/CD), pass the key via the option — but be aware it will appear in shell history and process listings:
 
 ```bash
 php artisan sensitive-fields:rekey --old-key="base64:YOUR_OLD_APP_KEY"
@@ -78,7 +84,7 @@ php artisan sensitive-fields:rekey --old-key="base64:YOUR_OLD_APP_KEY"
 
 Options:
 
-- `--old-key` — the previous `APP_KEY` value from your `.env` (required)
+- `--old-key` — the previous `APP_KEY` value (optional; prompted if omitted)
 - `--form=<handle>` — limit to a single form
 - `--dry-run` — preview without writing
 

@@ -30,10 +30,11 @@ class RekeyCommand extends Command
 
     public function handle(): int
     {
-        $oldKeyString = $this->option('old-key');
+        $oldKeyString = $this->option('old-key')
+            ?? $this->secret('Enter the previous APP_KEY (base64:... format, as stored in your .env)');
 
         if (! $oldKeyString) {
-            $this->error('The --old-key option is required. Pass the previous APP_KEY value (e.g. base64:...).');
+            $this->error('No key provided.');
 
             return self::FAILURE;
         }
