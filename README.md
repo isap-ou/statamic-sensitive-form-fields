@@ -17,6 +17,7 @@ Encrypt selected form submission fields before they are written to disk or datab
 | Role-based access control | — | ✓ |
 | Masked values for unauthorized users | — | ✓ |
 | Configurable mask string (default: `••••••`) | — | ✓ |
+| Re-key on APP_KEY rotation | — | ✓ |
 
 ---
 
@@ -63,7 +64,25 @@ Go to **CP → Users → Roles** and grant **"View Decrypted Sensitive Fields"**
 
 Users without the permission see `••••••` instead of the actual value.
 
-### 3. [Pro] Configure addon settings
+### 3. [Pro] Re-key after APP_KEY rotation
+
+If you need to rotate `APP_KEY`, first re-encrypt all existing sensitive submissions using the old key:
+
+```bash
+php artisan sensitive-fields:rekey --old-key="base64:YOUR_OLD_APP_KEY"
+```
+
+Options:
+
+- `--old-key` — the previous `APP_KEY` value from your `.env` (required)
+- `--form=<handle>` — limit to a single form
+- `--dry-run` — preview without writing
+
+After the command completes successfully, update `APP_KEY` in your `.env`.
+
+> If the command reports errors for some submissions, those values could not be decrypted with the provided key and are left unchanged.
+
+### 4. [Pro] Configure addon settings
 
 Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 
@@ -87,7 +106,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 ## Limitations
 
 - **Search and filtering** — encrypted values are opaque; filtering or searching on sensitive fields will not work
-- **APP_KEY rotation** — changing `APP_KEY` permanently breaks all existing encrypted data; there is no built-in migration tool (see [Before You Start](#before-you-start-appkey))
+- **APP_KEY rotation** — changing `APP_KEY` breaks existing encrypted data; use `sensitive-fields:rekey` (Pro) to re-encrypt before rotating the key (see [Before You Start](#before-you-start-appkey))
 - **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
 - **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
 - **API** — REST and GraphQL responses respect the same permission rules (Pro)

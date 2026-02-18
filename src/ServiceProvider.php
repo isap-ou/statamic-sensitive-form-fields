@@ -6,6 +6,7 @@ namespace Isapp\SensitiveFormFields;
 
 use Isapp\SensitiveFormFields\Commands\DecryptExistingCommand;
 use Isapp\SensitiveFormFields\Commands\EncryptExistingCommand;
+use Isapp\SensitiveFormFields\Commands\RekeyCommand;
 use Isapp\SensitiveFormFields\Encryption\FieldEncryptor;
 use Isapp\SensitiveFormFields\Repositories\DecryptingSubmissionRepository;
 use Isapp\SensitiveFormFields\Repositories\RawSubmissionRepository;
@@ -133,6 +134,7 @@ class ServiceProvider extends AddonServiceProvider
         $this->commands([
             EncryptExistingCommand::class,
             DecryptExistingCommand::class,
+            RekeyCommand::class,
         ]);
     }
 }

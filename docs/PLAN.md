@@ -38,7 +38,8 @@ src/
 ├── ServiceProvider.php                          ← wires permission, field config, repository decorator
 ├── Commands/
 │   ├── EncryptExistingCommand.php               ← [PRO] bulk-encrypt existing submissions
-│   └── DecryptExistingCommand.php               ← [PRO] bulk-decrypt existing submissions
+│   ├── DecryptExistingCommand.php               ← [PRO] bulk-decrypt existing submissions
+│   └── RekeyCommand.php                         ← [PRO] re-encrypt from old APP_KEY to current
 ├── Encryption/
 │   └── FieldEncryptor.php                       ← encrypt/decrypt + marker logic + addon settings
 ├── Listeners/
@@ -127,7 +128,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 - Permission-based access control: only super admins and users with `view decrypted sensitive fields` permission see decrypted values.
 - Unauthorized users see mask string (default `••••••`, configurable in addon settings).
 - Permission registered in CP only when PRO mode is active.
-- PRO Artisan commands available: `sensitive-fields:encrypt-existing`, `sensitive-fields:decrypt-existing`.
+- PRO Artisan commands available: `sensitive-fields:encrypt-existing`, `sensitive-fields:decrypt-existing`, `sensitive-fields:rekey`.
 
 ---
 
@@ -148,6 +149,14 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
    - Resolves sensitive handles from each form blueprint.
    - Decrypts values marked with `enc:v1:`.
    - Persists via raw (undecorated) repository `save()` — decrypted values are not re-encrypted.
+
+3. `sensitive-fields:rekey` (`src/Commands/RekeyCommand.php`)
+   - Recursively iterates all forms and all existing submissions.
+   - Resolves sensitive handles from each form blueprint.
+   - Decrypts values marked with `enc:v1:` using the provided old key (`--old-key`).
+   - Re-encrypts with the current `APP_KEY` via `FieldEncryptor::encrypt()`.
+   - Persists via raw (undecorated) repository `save()`.
+   - On decryption failure (wrong old key for a value), warns and continues — data is never silently overwritten.
 
 ### Command behavior
 
@@ -197,7 +206,46 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 ## Known Limitations
 
 1. **Search/filtering** — encrypted fields cannot be searched (ciphertext is opaque)
-2. **APP_KEY rotation** — makes existing data unreadable without migration; PRO plan includes recursive encrypt/decrypt re-save commands for bulk remediation
+2. **APP_KEY rotation** — makes existing data unreadable without migration; use `sensitive-fields:rekey --old-key=<key>` (PRO) to re-encrypt with the new key
 3. **Complex field types** — only string values encrypted; arrays/grids/replicator skipped
 4. **Export** — decrypted or masked based on user permission
 5. **API access** — encrypted/masked unless user has permission
+
+---
+
+## Roadmap
+
+### [PRO] `sensitive-fields:rekey` — Re-key on APP_KEY rotation ✅ planned for next release
+
+**Status:** Implemented.
+
+Artisan command to re-encrypt all sensitive field values from an old `APP_KEY` to the current one.
+Solves the documented APP_KEY rotation limitation.
+
+- `--old-key=<base64:...>` — previous APP_KEY in `.env` format (required)
+- `--form=<handle>` — target a single form
+- `--dry-run` — preview without writing
+- Skips plaintext values (not encrypted); warns and continues on decrypt failure.
+- Implemented in `src/Commands/RekeyCommand.php`.
+
+---
+
+### [PRO] Per-form permission granularity — Planned
+
+Currently the `view decrypted sensitive fields` permission is binary: a user either sees decrypted values in **all** forms or in none. Larger teams need per-form control (e.g. HR form vs. contact form handled by different roles).
+
+Implementation sketch:
+- Register dynamic permissions per form: `view decrypted {form-handle} sensitive fields`.
+- Resolve the correct permission in `DecryptingSubmissionRepository` based on the submission's form handle.
+- Statamic's permission system supports dynamic permission registration.
+
+---
+
+### [FREE/PRO] CP notification on decrypt failure — Planned
+
+Currently, decryption failures (e.g. after an unrecovered APP_KEY rotation) are only logged via `Log::warning`. A Statamic CP notification dispatched to super admins would make data corruption visible without requiring log monitoring.
+
+Implementation sketch:
+- Hook into the existing `catch (\Throwable)` path in `FieldEncryptor::decrypt()`.
+- Dispatch a Statamic `Notification` to super admins (or use a Statamic flash/CP alert).
+- Add a rate-limit or deduplication guard to avoid notification spam.
