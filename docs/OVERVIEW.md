@@ -60,7 +60,7 @@ tests/
    - Checks the current user's permission (`view decrypted sensitive fields`).
    - **Authorized**: strips `enc:v1:` prefix and decrypts the value.
    - **Unauthorized**: replaces the value with the mask string (default `••••••`).
-4. If decryption fails (e.g. key rotation), returns raw ciphertext and logs a warning.
+4. If decryption fails (e.g. key rotation), returns raw ciphertext, logs a warning, and dispatches a CP error toast to the current user (HTTP context only; deduplicated to once per form per hour via `Cache::add`).
 
 ### Addon Settings
 
@@ -98,8 +98,9 @@ vendor/bin/phpunit
 
 ### Test Coverage
 
-- **Unit tests** (`FieldEncryptorTest`, 7 tests): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, mask value.
+- **Unit tests** (`FieldEncryptorTest`, 9 tests): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, mask value, CP toast console guard.
 - **Feature tests** (`SensitiveFieldsTest`, 12 tests): full write/read flow, free/pro mode, permission-based masking, query-builder decryption, per-form permission scoping.
+- **Unit tests** (`FieldEncryptorTest`, 9 tests): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, mask value, CP toast console guard.
 - **PRO command tests** (`ProCommandsTest`, 6 tests): bulk encrypt/decrypt, dry-run, skip-already-encrypted.
 
 ### PRO Commands

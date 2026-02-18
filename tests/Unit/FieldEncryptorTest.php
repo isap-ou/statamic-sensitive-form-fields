@@ -66,4 +66,25 @@ class FieldEncryptorTest extends TestCase
     {
         $this->assertSame('plaintext', $this->encryptor->decrypt('plaintext'));
     }
+
+    public function test_failed_decrypt_does_not_dispatch_toast_in_console_context()
+    {
+        // The test suite runs in console context (app()->runningInConsole() === true),
+        // so the Toast must never be called — verified by spying on the facade.
+        \Statamic\Facades\CP\Toast::spy();
+
+        $this->encryptor->decrypt('enc:v1:corrupted-ciphertext', 'contact');
+
+        \Statamic\Facades\CP\Toast::shouldNotHaveReceived('error');
+    }
+
+    public function test_failed_decrypt_without_context_does_not_dispatch_toast_in_console_context()
+    {
+        \Statamic\Facades\CP\Toast::spy();
+
+        // Backward-compatible: context parameter is optional.
+        $this->encryptor->decrypt('enc:v1:corrupted-ciphertext');
+
+        \Statamic\Facades\CP\Toast::shouldNotHaveReceived('error');
+    }
 }
