@@ -54,17 +54,25 @@ class FieldEncryptor
 
             // Only dispatch CP toasts during HTTP (CP) requests.
             // Commands and queue workers run in console context — skip entirely.
-            // Wrapped in its own try/catch so that cache or session failures
-            // (e.g. Redis down, no active session) never break the graceful fallback.
+            // Cache::add() is atomic set-if-not-exists; the key is rolled back via
+            // Cache::forget() when toast delivery fails so the dedup window is not
+            // consumed without a toast being shown. Wrapped in try/catch so that
+            // cache or session failures never break the graceful fallback.
             try {
                 if (! app()->runningInConsole()) {
                     $cacheKey = 'sffields.decrypt_failure_notified.' . ($context ?: 'unknown');
                     if (Cache::add($cacheKey, true, self::NOTIFY_TTL)) {
-                        Toast::error(__('statamic-sensitive-form-fields::messages.decrypt_failure_toast'));
+                        try {
+                            Toast::error(__('statamic-sensitive-form-fields::messages.decrypt_failure_toast'));
+                        } catch (\Throwable) {
+                            // Roll back the dedup key so a future request with an active
+                            // CP session can still deliver the toast.
+                            Cache::forget($cacheKey);
+                        }
                     }
                 }
             } catch (\Throwable) {
-                // Notification failure must never convert a recoverable decrypt error into a fatal one.
+                // Cache failure must never convert a recoverable decrypt error into a fatal one.
             }
 
             return $value;
