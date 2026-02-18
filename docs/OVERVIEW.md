@@ -32,10 +32,12 @@ resources/
     └── settings.yaml               # Addon settings blueprint (enabled, mask)
 
 tests/
+├── TestCase.php
 ├── Unit/
 │   └── FieldEncryptorTest.php      # 7 unit tests for encryption logic
 └── Feature/
-    └── SensitiveFieldsTest.php     # 6 feature tests for full flow
+    ├── SensitiveFieldsTest.php     # 10 feature tests for full flow
+    └── ProCommandsTest.php         # 6 feature tests for PRO commands
 ```
 
 ### Write Path (Encryption)

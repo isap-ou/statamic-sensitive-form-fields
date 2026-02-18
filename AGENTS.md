@@ -46,7 +46,8 @@ Instructions for AI agents working in this repository.
 - Do only what the user explicitly asked. Do not add side features, refactors, or architecture changes without request.
 - Keep changes cohesive and minimal. Avoid creating extra files/classes/methods unless required by the task.
 - Follow `docs/PLAN.md` and `docs/OVERVIEW.md` as implementation source of truth.
-- After any behavior or convention change, sync docs before commit (`README.md`, `DEVELOPMENT.md`, `SECURITY.md`, `docs/`).
+- At session start, if any doc inconsistencies or staleness are discovered during initial reading, fix them immediately — do not wait for user instruction.
+- After adding a feature, fixing a bug, or changing any behavior or convention, sync the relevant docs before commit (see Documentation section for what to update and when).
 
 ## Git / Commits / PR Rules
 
@@ -78,9 +79,15 @@ Instructions for AI agents working in this repository.
 ## Documentation
 
 - Write all documentation in English.
-- Keep `README.md`, `DEVELOPMENT.md`, `SECURITY.md`, and `LICENSE.md` synchronized with code.
-- Keep `docs/OVERVIEW.md` and `docs/PLAN.md` synchronized with current architecture, data flow, and limitations.
-- Keep root `CHANGELOG.md` updated with changes.
-- Keep changelog instructions in `docs/CHANGELOG.md`.
 - Do not claim "GDPR compliant" in README.
-- Keep changes cohesive and minimal.
+
+### What to update and when
+
+| Change type | Update these files |
+|---|---|
+| New feature | `CHANGELOG.md`, `README.md` (if user-facing), `docs/OVERVIEW.md`, `docs/PLAN.md` |
+| Bug fix | `CHANGELOG.md` |
+| Architecture change | `docs/OVERVIEW.md`, `docs/PLAN.md`, `README.md`, `DEVELOPMENT.md` |
+| Security change | `SECURITY.md`, `CHANGELOG.md` |
+| New/changed setting or permission | `README.md`, `docs/OVERVIEW.md` |
+| New/changed Artisan command | `README.md`, `docs/PLAN.md` |
