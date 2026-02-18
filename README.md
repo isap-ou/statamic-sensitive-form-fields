@@ -17,6 +17,7 @@ Encrypt selected form submission fields before they are written to disk or datab
 | Role-based access control | — | ✓ |
 | Masked values for unauthorized users | — | ✓ |
 | Configurable mask string (default: `••••••`) | — | ✓ |
+| Re-key on APP_KEY rotation | — | ✓ |
 
 ---
 
@@ -43,7 +44,7 @@ There is no recovery path without the original key. Before enabling this addon o
 
 - Confirm your `APP_KEY` is backed up securely (password manager, secrets vault)
 - Never commit `.env` to version control
-- If you ever need to rotate `APP_KEY`, decrypt and re-encrypt all sensitive submissions first
+- If you ever need to rotate `APP_KEY`, use `sensitive-fields:rekey` (Pro) to re-encrypt submissions under the new key before traffic hits the rotated key (see [Re-key after APP_KEY rotation](#3-pro-re-key-after-appkey-rotation))
 
 > A lost or rotated `APP_KEY` = unrecoverable submission data. The addon logs a warning and returns raw ciphertext on decryption failure, but cannot recover data without the original key.
 
@@ -63,7 +64,33 @@ Go to **CP → Users → Roles** and grant **"View Decrypted Sensitive Fields"**
 
 Users without the permission see `••••••` instead of the actual value.
 
-### 3. [Pro] Configure addon settings
+### 3. [Pro] Re-key after APP_KEY rotation
+
+The command re-encrypts existing submissions using the **current** `APP_KEY`, so the new key must already be in place before you run it:
+
+1. Back up the old `APP_KEY` value.
+2. Set the **new** `APP_KEY` in your `.env` (and clear config cache if necessary).
+3. Run the rekey command. When invoked without `--old-key`, it will prompt for the key interactively (input is hidden):
+
+```bash
+php artisan sensitive-fields:rekey
+```
+
+For non-interactive environments (CI/CD), pass the key via the option — but be aware it will appear in shell history and process listings:
+
+```bash
+php artisan sensitive-fields:rekey --old-key="base64:YOUR_OLD_APP_KEY"
+```
+
+Options:
+
+- `--old-key` — the previous `APP_KEY` value (optional; prompted if omitted)
+- `--form=<handle>` — limit to a single form
+- `--dry-run` — preview without writing
+
+> If the command reports errors for some submissions, those values could not be decrypted with the provided key and are left unchanged.
+
+### 4. [Pro] Configure addon settings
 
 Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 
@@ -87,7 +114,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 ## Limitations
 
 - **Search and filtering** — encrypted values are opaque; filtering or searching on sensitive fields will not work
-- **APP_KEY rotation** — changing `APP_KEY` permanently breaks all existing encrypted data; there is no built-in migration tool (see [Before You Start](#before-you-start-appkey))
+- **APP_KEY rotation** — changing `APP_KEY` breaks existing encrypted data; set the new key first, then use `sensitive-fields:rekey --old-key=<previous-key>` (Pro) to re-encrypt (see [Re-key after APP_KEY rotation](#3-pro-re-key-after-appkey-rotation))
 - **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
 - **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
 - **API** — REST and GraphQL responses respect the same permission rules (Pro)

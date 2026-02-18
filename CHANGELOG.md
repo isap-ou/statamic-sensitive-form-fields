@@ -6,6 +6,8 @@ This changelog is used as the base for GitHub Release notes.
 
 ## Unreleased
 
+- [new] PRO: `sensitive-fields:rekey` — re-encrypts sensitive field values from an old `APP_KEY` to the current one (supports `--old-key`, `--form`, `--dry-run`)
+
 ## 1.0.0 (2026-02-17)
 
 - [new] Per-field `sensitive` toggle on Text and Textarea fieldtypes in the form blueprint editor
