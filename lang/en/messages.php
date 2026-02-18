@@ -9,6 +9,9 @@ return [
     'permission_label' => 'View Decrypted Sensitive Fields',
     'permission_description' => 'Allow viewing decrypted values of sensitive form fields',
 
+    'permission_form_label' => 'View Decrypted Sensitive Fields',
+    'permission_form_description' => 'Allow viewing decrypted values of sensitive fields in this form only',
+
     'settings_enabled_display' => 'Enabled',
     'settings_enabled_instructions' => 'Enable or disable field encryption.',
     'settings_mask_display' => 'Mask String',

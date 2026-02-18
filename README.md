@@ -60,9 +60,14 @@ From this point on, new submissions will have those field values encrypted befor
 
 ### 2. [Pro] Assign the permission
 
-Go to **CP → Users → Roles** and grant **"View Decrypted Sensitive Fields"** to roles that should see plain text. Super admins always see decrypted values regardless of role.
+Go to **CP → Users → Roles** and grant a permission to roles that should see plain text. Super admins always see decrypted values regardless of role.
 
-Users without the permission see `••••••` instead of the actual value.
+Two permission levels are available:
+
+- **View Decrypted Sensitive Fields** (global) — grants access to decrypted values across **all** forms. Use this for administrator roles.
+- **View Decrypted Sensitive Fields** per-form — grants access to decrypted values in **one specific form** only. Each form gets its own entry in the Roles editor. Use this to give role-specific access (e.g. HR reads the job-application form but not the contact form).
+
+Users without a matching permission see `••••••` instead of the actual value.
 
 ### 3. [Pro] Re-key after APP_KEY rotation
 

@@ -51,6 +51,24 @@ class SensitiveFieldsTest extends TestCase
         $form->save();
     }
 
+    protected function createNewsletterForm(): void
+    {
+        $blueprint = Blueprint::makeFromFields([
+            'email' => [
+                'type' => 'text',
+                'display' => 'Email',
+                'sensitive' => true,
+            ],
+        ]);
+
+        $blueprint->setHandle('newsletter');
+        $blueprint->setNamespace('forms');
+        $blueprint->save();
+
+        $form = Form::make('newsletter')->title('Newsletter');
+        $form->save();
+    }
+
     protected function createSubmission(array $data = []): \Statamic\Contracts\Forms\Submission
     {
         $form = Form::find('contact');
@@ -209,5 +227,52 @@ class SensitiveFieldsTest extends TestCase
         $results = FormSubmission::query()->where('form', 'contact')->get();
 
         $this->assertSame('••••••', $results->first()->get('email'));
+    }
+
+    // --- PRO mode: per-form permission ---
+
+    public function test_pro_mode_per_form_permission_grants_access_to_that_form()
+    {
+        $this->enableProMode();
+        $submission = $this->createSubmission();
+
+        $role = Role::make()->handle('contact-reader')
+            ->title('Contact Reader')
+            ->permissions(['view decrypted contact sensitive fields']);
+        $role->save();
+
+        $user = User::make()->id('form-reader')->email('formreader@test.com');
+        $user->assignRole('contact-reader');
+        $user->save();
+        $this->actingAs($user);
+
+        $found = FormSubmission::find($submission->id());
+
+        $this->assertSame('john@example.com', $found->get('email'));
+        $this->assertSame('Hello!', $found->get('message'));
+    }
+
+    public function test_pro_mode_per_form_permission_is_scoped_to_that_form_only()
+    {
+        $this->enableProMode();
+        $this->createNewsletterForm();
+
+        $role = Role::make()->handle('contact-only-reader')
+            ->title('Contact Only Reader')
+            ->permissions(['view decrypted contact sensitive fields']);
+        $role->save();
+
+        $user = User::make()->id('scoped-reader')->email('scopedreader@test.com');
+        $user->assignRole('contact-only-reader');
+        $user->save();
+        $this->actingAs($user);
+
+        $form = Form::find('newsletter');
+        $newsletterSubmission = FormSubmission::make()->form($form)->data(['email' => 'sub@example.com']);
+        $newsletterSubmission->save();
+
+        $found = FormSubmission::find($newsletterSubmission->id());
+
+        $this->assertSame('••••••', $found->get('email'));
     }
 }

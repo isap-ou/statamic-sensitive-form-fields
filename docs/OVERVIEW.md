@@ -77,7 +77,12 @@ The addon supports Statamic Editions (`"editions": ["free", "pro"]` in `composer
 
 ### Permission
 
-The addon registers a custom permission: **"View Decrypted Sensitive Fields"** under the Forms permission group. Super admins always have this permission implicitly.
+The addon registers two custom permissions under the Forms permission group:
+
+- **`view decrypted sensitive fields`** — global wildcard; grants decrypted access to all forms.
+- **`view decrypted {form-handle} sensitive fields`** — per-form; one entry is generated per registered form using Statamic's native `{placeholder}` + `replacements()` mechanism (same pattern as `view {collection} entries`).
+
+Super admins always have decrypted access implicitly, regardless of role assignments.
 
 ### Field Configuration
 
@@ -94,7 +99,7 @@ vendor/bin/phpunit
 ### Test Coverage
 
 - **Unit tests** (`FieldEncryptorTest`, 7 tests): marker detection, encrypt/decrypt round-trip, double-encryption prevention, non-string skipping, decrypt failure handling, mask value.
-- **Feature tests** (`SensitiveFieldsTest`, 10 tests): full write/read flow, free/pro mode, permission-based masking, query-builder decryption.
+- **Feature tests** (`SensitiveFieldsTest`, 12 tests): full write/read flow, free/pro mode, permission-based masking, query-builder decryption, per-form permission scoping.
 - **PRO command tests** (`ProCommandsTest`, 6 tests): bulk encrypt/decrypt, dry-run, skip-already-encrypted.
 
 ### PRO Commands
