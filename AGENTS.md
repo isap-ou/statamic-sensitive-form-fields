@@ -73,6 +73,7 @@ These rules apply whenever a new Artisan command is written or documented.
 - Do not skip hooks with `--no-verify`.
 - Never mention AI agents or co-authorship in commit messages.
 - Do not add `Co-Authored-By` lines referencing AI.
+- PR body: include only a `## Summary` section (bullet points). Do not add a `## Test plan` section.
 
 ## Testing Rules
 
