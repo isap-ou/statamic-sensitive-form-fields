@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace Isapp\SensitiveFormFields\Encryption;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Statamic\Addons\Addon;
+use Statamic\Facades\CP\Toast;
+use Statamic\Statamic;
 
 class FieldEncryptor
 {
     // Versioned prefix prepended to every ciphertext.
     // Allows detecting already-encrypted values and future format migrations.
     protected const PREFIX = 'enc:v1:';
+
+    // Suppress repeated CP toasts for the same form within this window (seconds).
+    protected const NOTIFY_TTL = 3600;
 
     public function __construct(
         protected Addon $addon,
@@ -31,7 +37,12 @@ class FieldEncryptor
     // Returns the value unchanged (with a log warning) on decryption failure,
     // e.g. after an APP_KEY rotation. Callers should treat the raw ciphertext
     // as an opaque fallback rather than a fatal error.
-    public function decrypt(string $value): string
+    //
+    // $context is an optional form handle used to deduplicate CP toasts so that
+    // bulk failures (e.g. many submissions after an APP_KEY rotation) produce at
+    // most one toast per form per hour. Pass the form handle from repository callers;
+    // omit from CLI callers (toast is suppressed in console context anyway).
+    public function decrypt(string $value, string $context = ''): string
     {
         if (! $this->isEncrypted($value)) {
             return $value;
@@ -41,6 +52,29 @@ class FieldEncryptor
             return Crypt::decryptString(substr($value, \strlen(self::PREFIX)));
         } catch (\Throwable $e) {
             Log::warning('Failed to decrypt sensitive field value: ' . $e->getMessage());
+
+            // Only dispatch CP toasts on actual CP requests — not API or frontend
+            // requests, which could consume the dedup window before a CP user visits.
+            // Cache::add() is atomic set-if-not-exists; the key is rolled back via
+            // Cache::forget() when toast delivery fails so the dedup window is not
+            // consumed without a toast being shown. Wrapped in try/catch so that
+            // cache or session failures never break the graceful fallback.
+            try {
+                if (Statamic::isCpRoute()) {
+                    $cacheKey = 'sffields.decrypt_failure_notified.' . ($context ?: 'unknown');
+                    if (Cache::add($cacheKey, true, self::NOTIFY_TTL)) {
+                        try {
+                            Toast::error(__('statamic-sensitive-form-fields::messages.decrypt_failure_toast'));
+                        } catch (\Throwable) {
+                            // Roll back the dedup key so a future request with an active
+                            // CP session can still deliver the toast.
+                            Cache::forget($cacheKey);
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+                // Cache failure must never convert a recoverable decrypt error into a fatal one.
+            }
 
             return $value;
         }

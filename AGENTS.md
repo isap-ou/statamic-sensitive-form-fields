@@ -35,6 +35,7 @@ Instructions for AI agents working in this repository.
 - Listeners auto-discovered from `src/Listeners/`, translations from `lang/`.
 - Encryption: `Crypt::encryptString` with `enc:v1:` marker prefix. No double encryption.
 - Handle decrypt failures gracefully — log warning, return raw ciphertext.
+- `DecryptingSubmissionRepository` and `DecryptingSubmissionQueryBuilder` mirror identical `decryptSubmission()` / `isAuthorizedForForm()` logic. Any change to either file **must** be applied to the other.
 - Field config toggle scoped to `Text` and `Textarea` fieldtypes only (not global `Fieldtype::`).
 - Permission: `view decrypted sensitive fields`. Super admins always authorized.
 - Compatible with both Stache (flat-file) and Eloquent Driver.

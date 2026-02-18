@@ -112,7 +112,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
    - **Pro, authorized** — decrypts and returns plain text
    - **Pro, unauthorized** — returns the configured mask string
 3. Values already prefixed with `enc:v1:` are never double-encrypted.
-4. If decryption fails (e.g. after `APP_KEY` rotation), the raw ciphertext is returned and a warning is logged.
+4. If decryption fails (e.g. after `APP_KEY` rotation), the raw ciphertext is returned, a warning is logged, and an error toast is shown in the CP (once per form per hour to avoid notification spam).
 
 ---
 

@@ -172,7 +172,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 
 ## Tests
 
-### Unit (FieldEncryptorTest, 7 tests)
+### Unit (FieldEncryptorTest, 9 tests)
 1. Encrypts value with marker prefix
 2. Decrypts back to plaintext
 3. No double encryption
@@ -180,6 +180,8 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 5. isEncrypted detects prefix
 6. mask returns configured value
 7. decrypt returns non-encrypted as-is
+8. Failed decrypt does not dispatch toast in console context
+9. Failed decrypt without context does not dispatch toast in console context
 
 ### Feature (SensitiveFieldsTest, 12 tests)
 1. Sensitive field stored encrypted
@@ -243,11 +245,11 @@ Larger teams need per-form control (e.g. HR form vs. contact form handled by dif
 
 ---
 
-### [FREE/PRO] CP notification on decrypt failure — Planned
+### [FREE/PRO] CP notification on decrypt failure — Implemented
 
-Currently, decryption failures (e.g. after an unrecovered APP_KEY rotation) are only logged via `Log::warning`. A Statamic CP notification dispatched to super admins would make data corruption visible without requiring log monitoring.
+Decryption failures are now surfaced in the CP as an error toast in addition to the existing `Log::warning`.
 
-Implementation sketch:
-- Hook into the existing `catch (\Throwable)` path in `FieldEncryptor::decrypt()`.
-- Dispatch a Statamic `Notification` to super admins (or use a Statamic flash/CP alert).
-- Add a rate-limit or deduplication guard to avoid notification spam.
+- `FieldEncryptor::decrypt()` accepts an optional `string $context` parameter (form handle) for deduplication.
+- In HTTP context, `Cache::add('sffields.decrypt_failure_notified.{context}', true, 3600)` is used as an atomic set-if-not-exists guard — at most one toast per form per hour.
+- `Toast::error()` is skipped entirely when `app()->runningInConsole()` is true (commands, queue workers).
+- `DecryptingSubmissionRepository` passes the form handle as `$context` when calling `decrypt()`.

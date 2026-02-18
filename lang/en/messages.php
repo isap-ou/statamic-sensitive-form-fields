@@ -12,6 +12,8 @@ return [
     'permission_form_label' => 'View Decrypted Sensitive Fields',
     'permission_form_description' => 'Allow viewing decrypted values of sensitive fields in this form only',
 
+    'decrypt_failure_toast' => 'One or more sensitive field values could not be decrypted. Your APP_KEY may have changed. Use sensitive-fields:rekey (Pro) to recover.',
+
     'settings_enabled_display' => 'Enabled',
     'settings_enabled_instructions' => 'Enable or disable field encryption.',
     'settings_mask_display' => 'Mask String',
