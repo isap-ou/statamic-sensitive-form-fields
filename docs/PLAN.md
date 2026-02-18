@@ -180,8 +180,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 5. isEncrypted detects prefix
 6. mask returns configured value
 7. decrypt returns non-encrypted as-is
-8. Failed decrypt does not dispatch toast in console context
-9. Failed decrypt without context does not dispatch toast in console context
+8. Failed decrypt returns raw value and logs warning (no side-effects)
 
 ### Feature (SensitiveFieldsTest, 12 tests)
 1. Sensitive field stored encrypted
@@ -244,12 +243,3 @@ Larger teams need per-form control (e.g. HR form vs. contact form handled by dif
 - Both `DecryptingSubmissionRepository` and `DecryptingSubmissionQueryBuilder` check global then per-form permission via `isAuthorizedForForm(string $formHandle)`.
 
 ---
-
-### [FREE/PRO] CP notification on decrypt failure — Implemented
-
-Decryption failures are now surfaced in the CP as an error toast in addition to the existing `Log::warning`.
-
-- `FieldEncryptor::decrypt()` accepts an optional `string $context` parameter (form handle) for deduplication.
-- In HTTP context, `Cache::add('sffields.decrypt_failure_notified.{context}', true, 3600)` is used as an atomic set-if-not-exists guard — at most one toast per form per hour.
-- `Toast::error()` is skipped entirely when `app()->runningInConsole()` is true (commands, queue workers).
-- `DecryptingSubmissionRepository` passes the form handle as `$context` when calling `decrypt()`.
