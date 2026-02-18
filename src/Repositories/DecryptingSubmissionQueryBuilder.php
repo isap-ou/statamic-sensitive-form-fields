@@ -81,7 +81,7 @@ class DecryptingSubmissionQueryBuilder implements SubmissionQueryBuilderContract
             }
 
             if ($canDecrypt) {
-                $submission->set($handle, $this->encryptor->decrypt($value));
+                $submission->set($handle, $this->encryptor->decrypt($value, $submission->form()->handle()));
             } else {
                 $submission->set($handle, $this->encryptor->mask());
             }
