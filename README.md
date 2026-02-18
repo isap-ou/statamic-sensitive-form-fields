@@ -108,7 +108,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 ## Limitations
 
 - **Search and filtering** — encrypted values are opaque; filtering or searching on sensitive fields will not work
-- **APP_KEY rotation** — changing `APP_KEY` breaks existing encrypted data; use `sensitive-fields:rekey` (Pro) to re-encrypt before rotating the key (see [Before You Start](#before-you-start-appkey))
+- **APP_KEY rotation** — changing `APP_KEY` breaks existing encrypted data; set the new key first, then use `sensitive-fields:rekey --old-key=<previous-key>` (Pro) to re-encrypt (see [Re-key after APP_KEY rotation](#3-pro-re-key-after-appkey-rotation))
 - **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
 - **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
 - **API** — REST and GraphQL responses respect the same permission rules (Pro)
