@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Isapp\SensitiveFormFields\Tests\Feature;
 
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Crypt;
 use Isapp\SensitiveFormFields\Repositories\RawSubmissionRepository;
 use Isapp\SensitiveFormFields\Tests\TestCase;
@@ -173,6 +174,36 @@ class RekeyCommandTest extends TestCase
         $shortKey = 'base64:' . base64_encode('tooshort');
 
         $this->artisan('sensitive-fields:rekey', ['--old-key' => $shortKey])->assertExitCode(1);
+    }
+
+    public function test_rekey_skips_values_already_encrypted_with_current_key(): void
+    {
+        $rawOldKey = Encrypter::generateKey('AES-256-CBC');
+        $wrongKeyOption = 'base64:' . base64_encode($rawOldKey);
+
+        // Store a submission with values already encrypted with the current APP_KEY.
+        $rawRepo = $this->getRawRepository();
+        $form = Form::find('contact');
+        $submission = FormSubmission::make()->form($form)->data([
+            'name' => 'John Doe',
+            'email' => 'enc:v1:' . Crypt::encryptString('john@example.com'),
+            'message' => 'enc:v1:' . Crypt::encryptString('Hello!'),
+        ]);
+        $rawRepo->save($submission);
+        $id = $submission->id();
+
+        $originalCiphertext = $rawRepo->find($id)->get('email');
+
+        // Running with a wrong old-key: values are already encrypted with current key — must be skipped, not errors.
+        $exitCode = Artisan::call('sensitive-fields:rekey', ['--old-key' => $wrongKeyOption]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode, "Command failed. Output:\n{$output}");
+        $this->assertStringContainsString('Skipped: 2', $output, "Output:\n{$output}");
+        $this->assertStringContainsString('Errors: 0', $output, "Output:\n{$output}");
+
+        // Ciphertext must be unchanged.
+        $this->assertSame($originalCiphertext, $rawRepo->find($id)->get('email'));
     }
 
     public function test_rekey_reports_error_when_old_key_cannot_decrypt(): void

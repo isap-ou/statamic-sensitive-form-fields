@@ -105,8 +105,16 @@ class RekeyCommand extends Command
                         try {
                             $plain = $oldEncrypter->decryptString(substr($value, \strlen('enc:v1:')));
                         } catch (DecryptException $e) {
-                            $totalErrors++;
-                            $this->warn("Could not decrypt [{$field}] in submission [{$submission->id()}]: {$e->getMessage()}");
+                            // Check whether the value is already encrypted with the current key
+                            // (e.g. the command is re-run, or some submissions were saved after
+                            // APP_KEY rotation). If so, count as skipped — not an error.
+                            try {
+                                \Illuminate\Support\Facades\Crypt::decryptString(substr($value, \strlen('enc:v1:')));
+                                $totalSkipped++;
+                            } catch (\Throwable) {
+                                $totalErrors++;
+                                $this->warn("Could not decrypt [{$field}] in submission [{$submission->id()}]: {$e->getMessage()}");
+                            }
 
                             continue;
                         }
