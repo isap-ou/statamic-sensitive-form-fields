@@ -44,7 +44,7 @@ There is no recovery path without the original key. Before enabling this addon o
 
 - Confirm your `APP_KEY` is backed up securely (password manager, secrets vault)
 - Never commit `.env` to version control
-- If you ever need to rotate `APP_KEY`, decrypt and re-encrypt all sensitive submissions first
+- If you ever need to rotate `APP_KEY`, use `sensitive-fields:rekey` (Pro) to re-encrypt submissions under the new key before traffic hits the rotated key (see [Re-key after APP_KEY rotation](#3-pro-re-key-after-appkey-rotation))
 
 > A lost or rotated `APP_KEY` = unrecoverable submission data. The addon logs a warning and returns raw ciphertext on decryption failure, but cannot recover data without the original key.
 
@@ -66,7 +66,11 @@ Users without the permission see `••••••` instead of the actual valu
 
 ### 3. [Pro] Re-key after APP_KEY rotation
 
-If you need to rotate `APP_KEY`, first re-encrypt all existing sensitive submissions using the old key:
+The command re-encrypts existing submissions using the **current** `APP_KEY`, so the new key must already be in place before you run it:
+
+1. Back up the old `APP_KEY` value.
+2. Set the **new** `APP_KEY` in your `.env` (and clear config cache if necessary).
+3. Run the rekey command with the old key:
 
 ```bash
 php artisan sensitive-fields:rekey --old-key="base64:YOUR_OLD_APP_KEY"
@@ -77,8 +81,6 @@ Options:
 - `--old-key` — the previous `APP_KEY` value from your `.env` (required)
 - `--form=<handle>` — limit to a single form
 - `--dry-run` — preview without writing
-
-After the command completes successfully, update `APP_KEY` in your `.env`.
 
 > If the command reports errors for some submissions, those values could not be decrypted with the provided key and are left unchanged.
 
