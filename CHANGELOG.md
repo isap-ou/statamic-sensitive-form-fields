@@ -7,6 +7,7 @@ This changelog is used as the base for GitHub Release notes.
 ## Unreleased
 
 - [new] PRO: `sensitive-fields:rekey` — re-encrypts sensitive field values from an old `APP_KEY` to the current one (supports `--old-key`, `--form`, `--dry-run`)
+- [new] PRO: per-form permission granularity — `view decrypted {form-handle} sensitive fields` grants access to a single form; the global `view decrypted sensitive fields` acts as a wildcard (backward-compatible)
 
 ## 1.0.0 (2026-02-17)
 

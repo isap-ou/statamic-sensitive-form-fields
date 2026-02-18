@@ -23,7 +23,7 @@ Data flow:
 [Admin reads submission]
   → DecryptingSubmissionRepository::find() / whereForm() / all()
     → delegates to original repository
-    → checks user permission "view decrypted sensitive fields"
+    → checks user permission "view decrypted sensitive fields" (global) or "view decrypted {form} sensitive fields" (per-form)
     → if authorized: strips "enc:v1:" prefix, decrypts via Crypt::decryptString
     → if unauthorized: returns masked value "••••••"
     → if decrypt fails: logs warning, returns raw ciphertext
@@ -125,7 +125,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 - No masking. No PRO commands.
 
 ### PRO
-- Permission-based access control: only super admins and users with `view decrypted sensitive fields` permission see decrypted values.
+- Permission-based access control: only super admins and users with `view decrypted sensitive fields` (global) or `view decrypted {form-handle} sensitive fields` (per-form) see decrypted values.
 - Unauthorized users see mask string (default `••••••`, configurable in addon settings).
 - Permission registered in CP only when PRO mode is active.
 - PRO Artisan commands available: `sensitive-fields:encrypt-existing`, `sensitive-fields:decrypt-existing`, `sensitive-fields:rekey`.
@@ -181,7 +181,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 6. mask returns configured value
 7. decrypt returns non-encrypted as-is
 
-### Feature (SensitiveFieldsTest, 10 tests)
+### Feature (SensitiveFieldsTest, 12 tests)
 1. Sensitive field stored encrypted
 2. Non-sensitive field remains plain
 3. Already-encrypted value not double-encrypted
@@ -192,6 +192,8 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 8. Pro mode — user with permission reads plaintext
 9. Query builder decrypts for super admin in free mode
 10. Query builder masks for unauthorized user in pro mode
+11. Pro mode — per-form permission grants access to that form
+12. Pro mode — per-form permission is scoped to that form only
 
 ### Feature PRO (ProCommandsTest, 6 tests)
 1. encrypt-existing encrypts plaintext sensitive fields
@@ -230,14 +232,14 @@ Solves the documented APP_KEY rotation limitation.
 
 ---
 
-### [PRO] Per-form permission granularity — Planned
+### [PRO] Per-form permission granularity — Implemented
 
-Currently the `view decrypted sensitive fields` permission is binary: a user either sees decrypted values in **all** forms or in none. Larger teams need per-form control (e.g. HR form vs. contact form handled by different roles).
+Larger teams need per-form control (e.g. HR form vs. contact form handled by different roles).
 
-Implementation sketch:
-- Register dynamic permissions per form: `view decrypted {form-handle} sensitive fields`.
-- Resolve the correct permission in `DecryptingSubmissionRepository` based on the submission's form handle.
-- Statamic's permission system supports dynamic permission registration.
+- Global permission `view decrypted sensitive fields` acts as a wildcard across all forms (backward-compatible).
+- Per-form permission `view decrypted {form-handle} sensitive fields` grants access to a single form only.
+- Dynamic per-form permissions registered via Statamic's native `{placeholder}` + `replacements()` mechanism in `ServiceProvider::registerPermission()`.
+- Both `DecryptingSubmissionRepository` and `DecryptingSubmissionQueryBuilder` check global then per-form permission via `isAuthorizedForForm(string $formHandle)`.
 
 ---
 

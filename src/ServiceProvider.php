@@ -12,6 +12,7 @@ use Isapp\SensitiveFormFields\Repositories\DecryptingSubmissionRepository;
 use Isapp\SensitiveFormFields\Repositories\RawSubmissionRepository;
 use Isapp\SensitiveFormFields\Support\SensitiveFieldResolver;
 use Statamic\Contracts\Forms\SubmissionRepository;
+use Statamic\Facades\Form;
 use Statamic\Facades\Permission;
 use Statamic\Fieldtypes\Text;
 use Statamic\Fieldtypes\Textarea;
@@ -90,6 +91,14 @@ class ServiceProvider extends AddonServiceProvider
             Permission::register('view decrypted sensitive fields')
                 ->label(__('statamic-sensitive-form-fields::messages.permission_label'))
                 ->description(__('statamic-sensitive-form-fields::messages.permission_description'));
+
+            Permission::register('view decrypted {form} sensitive fields')
+                ->label(__('statamic-sensitive-form-fields::messages.permission_form_label'))
+                ->description(__('statamic-sensitive-form-fields::messages.permission_form_description'))
+                ->replacements('form', fn () => Form::all()->map(fn ($f) => [
+                    'value' => $f->handle(),
+                    'label' => $f->title(),
+                ]));
         });
     }
 

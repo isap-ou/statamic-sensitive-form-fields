@@ -89,8 +89,8 @@ class DecryptingSubmissionRepository implements SubmissionRepository
         }
 
         // FREE: all authenticated users can read decrypted values.
-        // PRO: only super admins and users with the dedicated permission can.
-        $canDecrypt = $this->addon->edition() !== 'pro' || $this->isAuthorized();
+        // PRO: only super admins and users with the global or per-form permission can.
+        $canDecrypt = $this->addon->edition() !== 'pro' || $this->isAuthorizedForForm($submission->form()->handle());
 
         foreach ($sensitiveHandles as $handle) {
             $value = $submission->get($handle);
@@ -111,7 +111,7 @@ class DecryptingSubmissionRepository implements SubmissionRepository
         }
     }
 
-    protected function isAuthorized(): bool
+    protected function isAuthorizedForForm(string $formHandle): bool
     {
         $user = Auth::user();
 
@@ -124,6 +124,12 @@ class DecryptingSubmissionRepository implements SubmissionRepository
             return true;
         }
 
-        return $user->hasPermission('view decrypted sensitive fields');
+        // Global permission acts as a wildcard across all forms.
+        if ($user->hasPermission('view decrypted sensitive fields')) {
+            return true;
+        }
+
+        // Per-form permission grants access to this specific form only.
+        return $user->hasPermission("view decrypted {$formHandle} sensitive fields");
     }
 }
