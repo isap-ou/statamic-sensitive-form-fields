@@ -60,7 +60,7 @@ tests/
    - Checks the current user's permission (`view decrypted sensitive fields`).
    - **Authorized**: strips `enc:v1:` prefix and decrypts the value.
    - **Unauthorized**: replaces the value with the mask string (default `••••••`).
-4. If decryption fails (e.g. key rotation), returns raw ciphertext, logs a warning, and dispatches a CP error toast to the current user (HTTP context only; deduplicated to once per form per hour via `Cache::add`).
+4. If decryption fails (e.g. key rotation), returns raw ciphertext and logs a warning.
 
 ### Addon Settings
 
