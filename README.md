@@ -9,7 +9,7 @@ Encrypt selected form submission fields before they are written to disk or datab
 | Feature | Free | Pro |
 |---------|:----:|:---:|
 | AES-256-CBC encryption at rest | ✓ | ✓ |
-| Per-field "Sensitive" toggle in blueprint editor | ✓ | ✓ |
+| Per-field "Sensitive" toggle in the form blueprint editor | ✓ | ✓ |
 | Works with Stache and Eloquent Driver | ✓ | ✓ |
 | Double-encryption guard | ✓ | ✓ |
 | Global enable/disable toggle | ✓ | ✓ |
@@ -31,6 +31,16 @@ Encrypt selected form submission fields before they are written to disk or datab
 ```bash
 composer require isapp/statamic-sensitive-form-fields
 ```
+
+The addon ships a small Control Panel script. `php artisan statamic:install` publishes it, and a standard Statamic site runs that from Composer's `post-autoload-dump` — so installing and upgrading normally needs no extra step.
+
+If your deployment skips Composer scripts or ships a prebuilt `public/` directory, publish it explicitly:
+
+```bash
+php artisan vendor:publish --tag=statamic-sensitive-form-fields --force
+```
+
+Without the script the "Sensitive" toggle does not appear in any blueprint editor.
 
 ---
 
@@ -57,6 +67,13 @@ There is no recovery path without the original key. Before enabling this addon o
 Open any form blueprint in the Control Panel. On text or textarea fields, enable **"Sensitive (encrypted at rest)"**.
 
 From this point on, new submissions will have those field values encrypted before storage.
+
+The toggle is deliberately limited to the two editors where it can take effect:
+
+- **Forms → your form → Blueprint** — the setting applies immediately.
+- **Fields → Fieldsets** — the setting applies to fields of that fieldset once it is imported into a form blueprint.
+
+It is hidden in every other blueprint editor, because only form submissions are encrypted.
 
 ### 2. [Pro] Assign the permission
 
@@ -112,7 +129,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
    - **Pro, authorized** — decrypts and returns plain text
    - **Pro, unauthorized** — returns the configured mask string
 3. Values already prefixed with `enc:v1:` are never double-encrypted.
-4. If decryption fails (e.g. after `APP_KEY` rotation), the raw ciphertext is returned, a warning is logged, and an error toast is shown in the CP (once per form per hour to avoid notification spam).
+4. If decryption fails (e.g. after `APP_KEY` rotation), the raw ciphertext is returned and a warning is logged.
 
 ---
 
@@ -120,6 +137,7 @@ Go to **CP → Tools → Addons → Sensitive Form Fields → Settings**:
 
 - **Search and filtering** — encrypted values are opaque; filtering or searching on sensitive fields will not work
 - **APP_KEY rotation** — changing `APP_KEY` breaks existing encrypted data; set the new key first, then use `sensitive-fields:rekey --old-key=<previous-key>` (Pro) to re-encrypt (see [Re-key after APP_KEY rotation](#3-pro-re-key-after-appkey-rotation))
+- **Form submissions only** — nothing outside form submissions is encrypted, and the "Sensitive" toggle is not offered in any other blueprint editor. A `sensitive: true` key left over from an earlier version on a non-form blueprint is now hidden in the Control Panel and can only be removed by editing the blueprint YAML
 - **Complex field types** — only string-based fields are encrypted; arrays, grids, and replicator fields are skipped
 - **Export** — CSV and JSON exports contain decrypted or masked values based on the exporting user's permission (Pro)
 - **API** — REST and GraphQL responses respect the same permission rules (Pro)

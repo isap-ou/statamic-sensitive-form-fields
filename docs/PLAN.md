@@ -6,6 +6,8 @@
 ServiceProvider (bootAddon)
 ├── Register permission "view decrypted sensitive fields"
 ├── Append config toggle "sensitive" to Text + Textarea fieldtypes
+│   └── scoped to the form blueprint / fieldset editors by a CP field condition
+├── Ship resources/js/cp.js via $scripts → registers that condition
 ├── Listener auto-discovered: SubmissionSaving → encrypt before write
 └── Bind decorated SubmissionRepository → decrypt on read
 ```
@@ -52,8 +54,8 @@ src/
     └── SensitiveFieldResolver.php               ← reads blueprint, returns sensitive handles
 
 resources/
-└── blueprints/
-    └── settings.yaml                ← addon settings (auto-discovered)
+└── js/
+    └── cp.js                        ← CP script: registers the sensitiveFieldSupported condition
 
 lang/
 └── en/
@@ -64,7 +66,10 @@ tests/
 ├── Unit/
 │   └── FieldEncryptorTest.php       ← encrypt/decrypt/marker unit tests
 └── Feature/
-    └── SensitiveFieldsTest.php      ← integration tests
+    ├── SensitiveFieldsTest.php      ← integration tests
+    ├── FieldToggleScopeTest.php     ← CP toggle scoping
+    ├── ProCommandsTest.php          ← bulk encrypt/decrypt commands
+    └── RekeyCommandTest.php         ← rekey command
 ```
 
 ---
@@ -107,9 +112,16 @@ tests/
 ### ServiceProvider
 - `register()`: singleton bindings for FieldEncryptor (with Addon DI) and SensitiveFieldResolver.
 - `bootAddon()`: permission, field config (Text + Textarea only), repository decorator.
+- `$scripts`: ships `resources/js/cp.js` to the Control Panel.
 - Listener, settings, translations: all auto-discovered.
 
-### Addon Settings (`resources/blueprints/settings.yaml`)
+### CP field-toggle scoping (`resources/js/cp.js`)
+- The appended config field carries `if => 'custom sensitiveFieldSupported'`.
+- `cp.js` registers that condition via `Statamic.$conditions.add()`.
+- Passes when the `isFormBlueprint` CP config flag is `true`, or the path is the form blueprint editor (`/fields/blueprints/forms/`) or the fieldset editor (`/fields/fieldsets/`); fails closed otherwise.
+- Needed because `appendConfigField()` writes to a static per-fieldtype registry with no blueprint context — see `docs/OVERVIEW.md` → Field Configuration for the known coupling to internal CP surface.
+
+### Addon Settings (registered by `ServiceProvider::registerSettings()`)
 - `enabled` (toggle, default true)
 - `mask` (text, default `••••••`)
 
@@ -172,7 +184,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 
 ## Tests
 
-### Unit (FieldEncryptorTest, 9 tests)
+### Unit (FieldEncryptorTest, 7 tests)
 1. Encrypts value with marker prefix
 2. Decrypts back to plaintext
 3. No double encryption
@@ -180,7 +192,6 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 5. isEncrypted detects prefix
 6. mask returns configured value
 7. decrypt returns non-encrypted as-is
-8. Failed decrypt returns raw value and logs warning (no side-effects)
 
 ### Feature (SensitiveFieldsTest, 12 tests)
 1. Sensitive field stored encrypted
@@ -204,6 +215,22 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 5. decrypt-existing skips plaintext sensitive fields
 6. decrypt-existing dry-run does not persist
 
+### Feature PRO (RekeyCommandTest, 7 tests)
+1. rekey re-encrypts with the current key
+2. rekey skips plaintext sensitive values
+3. rekey dry-run does not persist
+4. rekey fails without an old key
+5. rekey fails with an invalid old key
+6. rekey skips values already encrypted with the current key
+7. rekey reports an error when the old key cannot decrypt
+
+### Feature (FieldToggleScopeTest, 5 tests)
+1. Text sensitive toggle carries the form-scope condition
+2. Textarea sensitive toggle carries the form-scope condition
+3. CP script implements the condition name the config field references
+4. CP script's route paths match Statamic's current CP routes
+5. CP script is registered and present at the path declared in `$scripts`
+
 ---
 
 ## Known Limitations
@@ -213,6 +240,7 @@ Edition is detected via the **Statamic Editions API**: `Addon::edition()` reads 
 3. **Complex field types** — only string values encrypted; arrays/grids/replicator skipped
 4. **Export** — decrypted or masked based on user permission
 5. **API access** — encrypted/masked unless user has permission
+6. **Form submissions only** — entries, terms, users, globals and assets are never encrypted; the toggle is hidden in their blueprints, and the scoping depends on internal CP surface (see `docs/OVERVIEW.md` → Field Configuration)
 
 ---
 

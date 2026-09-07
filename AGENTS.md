@@ -30,7 +30,7 @@ Instructions for AI agents working in this repository.
 ## Technical Rules
 
 - Extend `Statamic\Providers\AddonServiceProvider`, use `bootAddon()` not `boot()`.
-- Addon settings via `resources/blueprints/settings.yaml` (auto-discovered), NOT Laravel config files.
+- Addon settings are registered in code by `ServiceProvider::registerSettings()` via `registerSettingsBlueprint()`, NOT Laravel config files and NOT a `resources/blueprints/settings.yaml` file. Do not create one — `bootBlueprints()` would register a competing blueprint namespace and bypass the Pro-only gating of the `mask` field.
 - Read settings: `$addon->setting('key')` or `$addon->settings()->get('key')`.
 - Listeners auto-discovered from `src/Listeners/`, translations from `lang/`.
 - Encryption: `Crypt::encryptString` with `enc:v1:` marker prefix. No double encryption.

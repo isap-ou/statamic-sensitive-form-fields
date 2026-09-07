@@ -20,6 +20,10 @@ use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
 {
+    protected $scripts = [
+        __DIR__ . '/../resources/js/cp.js',
+    ];
+
     public function register()
     {
         parent::register();
@@ -106,13 +110,19 @@ class ServiceProvider extends AddonServiceProvider
     {
         // Scoped to Text and Textarea only — the fieldtypes used in form blueprints.
         // Intentionally not registered on the global Fieldtype base to avoid
-        // showing the toggle on content entry fields.
+        // showing the toggle on every fieldtype.
+        //
+        // appendConfigField() writes into a static, per-fieldtype-class registry that
+        // carries no blueprint context, so the toggle would otherwise render in every
+        // blueprint. The condition below hides it outside the form blueprint and fieldset
+        // editors; it is implemented in resources/js/cp.js.
         $config = [
             'type' => 'toggle',
             'display' => __('statamic-sensitive-form-fields::messages.field_toggle_display'),
             'instructions' => __('statamic-sensitive-form-fields::messages.field_toggle_instructions'),
             'default' => false,
             'width' => 50,
+            'if' => 'custom sensitiveFieldSupported',
         ];
 
         Text::appendConfigField('sensitive', $config);

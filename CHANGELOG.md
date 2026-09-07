@@ -6,6 +6,10 @@ This changelog is used as the base for GitHub Release notes.
 
 ## Unreleased
 
+- [fix] The "Sensitive (encrypted at rest)" toggle is now shown only in the form blueprint and fieldset editors — it previously appeared on every text and textarea field in every other blueprint too, where the setting has no effect
+- [fix] Field toggle instructions now state that only form submissions are encrypted
+- [new] Control Panel script (`resources/js/cp.js`) implementing the toggle's visibility condition — published by `php artisan statamic:install`, which a standard site runs on `composer update`. Deployments that skip Composer scripts or ship a prebuilt `public/` must run `php artisan vendor:publish --tag=statamic-sensitive-form-fields --force`, or the toggle will not appear at all
+
 ## 1.1.0 (2026-02-18)
 
 - [new] PRO: `sensitive-fields:rekey` — re-encrypts sensitive field values from an old `APP_KEY` to the current one (supports `--old-key`, `--form`, `--dry-run`)
